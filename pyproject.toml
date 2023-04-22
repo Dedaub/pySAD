@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pysad"
+version = "0.1.0"
+description = "Python Simple ABI Decoding"
+authors = ["Tony Rocco Valentine <tonyroccovalentine@protonmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyevmasm = "^0.2.3"
+eth-abi = "^4.0.0"
+eth-utils = "^2.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
