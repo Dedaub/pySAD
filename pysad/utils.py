@@ -9,7 +9,7 @@ from typing import Any, cast
 
 from eth_abi.grammar import ABIType, TupleType, parse
 from eth_utils.abi import collapse_if_tuple
-from pyevmasm import Instruction, disassemble_all
+from pyevmasm import Instruction, assemble_all, assemble_hex, disassemble_all
 
 from pysad.errors import BinaryDataError, MismatchedABI
 
@@ -58,25 +58,32 @@ def fix_reference_log_inputs(inputs: list[dict]) -> list[dict]:
     return _inputs
 
 
-def is_equivalent_runtime_opcode(op1: Instruction, op2: Instruction):
+def is_equivalent_runtime_opcode(init: Instruction, runtime: Instruction):
     # Handle the case of immutable value substitution
-    if op2.name.startswith("PUSH"):
-        return op1.name == op2.name and (op1.operand == op2.operand or op1.operand == 0)
-    return op1.name == op2.name
+    if runtime.name.startswith("PUSH"):
+        return init.name == runtime.name and (
+            init.operand == runtime.operand or runtime.operand == 0
+        )
+    return init.name == runtime.name
 
 
 def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
+
     init_bytecode = list(disassemble_all(input))
     runtime_bytecode = list(disassemble_all(bytecode))
 
     for i in range(0, len(input) - len(bytecode)):
         if all(
-            starmap(is_equivalent_runtime_opcode, zip(init_bytecode, runtime_bytecode))
+            starmap(
+                is_equivalent_runtime_opcode, zip(runtime_bytecode, init_bytecode[i:])
+            )
         ):
-            # constructor_code = input[:i]
-            # runtime_bytecode = input[i : len(bytecode)]
-            constructor_args = input[i + len(bytecode) :]
-            return constructor_args
+
+            # need to convert things back to bytecode from
+            # the instructions list since the indicies don't line up
+            constructor_bytecode = init_bytecode[:i]
+            constructor_length = len(hex_to_bytes(assemble_hex(constructor_bytecode)))
+            return input[constructor_length + len(bytecode) :]
 
     return None
 

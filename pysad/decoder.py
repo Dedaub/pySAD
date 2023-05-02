@@ -15,6 +15,7 @@ from pysad.errors import DecodingError, UnknownABI
 from pysad.signature import parse_signature
 from pysad.types import ABITypes, SelectorABIMapping
 from pysad.utils import (
+    extract_constructor_args,
     fix_log_types,
     fix_reference_log_inputs,
     get_input_info,
@@ -53,16 +54,14 @@ class ABIDecoder:
                 selector = event_abi_to_log_topic(entry)
                 self.events[selector] = entry
 
-    @classmethod
-    def _decode_primitive(cls, input: bytes | str, lookup: dict):
+    def _decode_primitive(self, input: bytes | str, lookup: dict):
         input = hex_to_bytes(input)
         selector, calldata = input[:4], input[4:]
-        func_abi = lookup.get(selector)
+        func_abi = lookup[selector]
         if func_abi is None:
             raise UnknownABI()
 
         types, _ = get_input_info(func_abi["inputs"])
-
         try:
             args = decode(types, calldata)
         except Exception as e:
@@ -125,14 +124,22 @@ class ABIDecoder:
 
         return named_tree(processed_abi["inputs"], args)
 
-    def decode_constructor(self, input: bytes | str):
+    def decode_constructor(self, input: bytes | str, bytecode: bytes | str):
+
         if not self.constructor:
             raise UnknownABI()
 
         input = hex_to_bytes(input)
-        return self._decode_primitive(
-            (b"\x00" * 4) + input, defaultdict(lambda: self.constructor)
-        )
+        bytecode = hex_to_bytes(bytecode)
+
+        args = extract_constructor_args(input, bytecode)
+
+        if args:
+            return self._decode_primitive(
+                (b"\x00" * 4) + args, defaultdict(lambda: self.constructor)
+            )
+        else:
+            return None
 
 
 class SignatureDecoder:
