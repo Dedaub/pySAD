@@ -68,7 +68,7 @@ class ABIDecoder:
         except Exception as e:
             raise DecodingError from e
 
-        return named_tree(func_abi, args)
+        return named_tree(func_abi["inputs"], args)
 
     def decode_function(self, input: bytes | str):
         return self._decode_primitive(input, self.functions)
@@ -123,7 +123,7 @@ class ABIDecoder:
         processed_abi = {k: v for k, v in event_abi if k != "inputs"}
         processed_abi["inputs"] = fix_reference_log_inputs(event_abi["inputs"])
 
-        return named_tree(processed_abi, args)
+        return named_tree(processed_abi["inputs"], args)
 
     def decode_constructor(self, input: bytes | str):
         if not self.constructor:
