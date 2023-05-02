@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
+
 from collections.abc import Iterable
 from copy import deepcopy
-from functools import wraps
-from typing import Any, cast
-from models import ABITypes
-from pysad.errors import BinaryDataError, MismatchedABI
-from pysad.models import DecodedABI
-
-from eth_abi.grammar import parse, ABIType, TupleType
-from eth_utils.abi import (
-    event_abi_to_log_topic,
-    function_abi_to_4byte_selector,
-    collapse_if_tuple,
-)
-
-from pyevmasm import Instruction, disassemble_all
 from itertools import starmap
+from typing import Any, cast
+
+from eth_abi.grammar import ABIType, TupleType, parse
+from eth_utils.abi import collapse_if_tuple
+from pyevmasm import Instruction, disassemble_all
+
+from pysad.errors import BinaryDataError, MismatchedABI
 
 
 def hex_to_bytes(input: str | bytes) -> bytes:
@@ -72,7 +66,6 @@ def is_equivalent_runtime_opcode(op1: Instruction, op2: Instruction):
 
 
 def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
-
     init_bytecode = list(disassemble_all(input))
     runtime_bytecode = list(disassemble_all(bytecode))
 
@@ -84,6 +77,8 @@ def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
             # runtime_bytecode = input[i : len(bytecode)]
             constructor_args = input[i + len(bytecode) :]
             return constructor_args
+
+    return None
 
 
 def named_tree(

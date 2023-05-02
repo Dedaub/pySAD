@@ -2,9 +2,18 @@
 
 from collections import defaultdict
 from itertools import starmap
-from eth_utils.abi import event_abi_to_log_topic, function_abi_to_4byte_selector
+from typing import Any
+
+from eth_abi.abi import decode
+from eth_utils.abi import (
+    event_abi_to_log_topic,
+    function_abi_to_4byte_selector,
+    function_signature_to_4byte_selector,
+)
+
 from pysad.errors import DecodingError, UnknownABI
-from pysad.models import ABITypes, SelectorABIMapping
+from pysad.signature import parse_signature
+from pysad.types import ABITypes, SelectorABIMapping
 from pysad.utils import (
     fix_log_types,
     fix_reference_log_inputs,
@@ -15,19 +24,19 @@ from pysad.utils import (
 )
 
 
-from eth_abi.abi import decode
-
-
 class ABIDecoder:
-
-    functions: SelectorABIMapping = dict()
-    errors: SelectorABIMapping = dict()
-    events: SelectorABIMapping = dict()
-    constructor: dict | None = None
+    functions: SelectorABIMapping
+    errors: SelectorABIMapping
+    events: SelectorABIMapping
+    constructor: dict | None
 
     def __init__(self, abi: list[dict]):
-        for entry in abi:
+        self.functions = {}
+        self.errors = {}
+        self.events = {}
+        self.constructor = None
 
+        for entry in abi:
             type: ABITypes = entry["type"]
 
             if type == "constructor":
@@ -78,14 +87,13 @@ class ABIDecoder:
             defaultdict(
                 lambda: {
                     "name": "return",
-                    "inputs": func_abi["outputs"],
+                    "inputs": func_abi["outputs"],  # type: ignore
                     "type": "function",
                 }
             ),
         )
 
     def decode_event(self, topics: list[str | bytes], memory: str | bytes):
-
         if len(topics) == 0:
             return {}
 
@@ -118,7 +126,6 @@ class ABIDecoder:
         return named_tree(processed_abi, args)
 
     def decode_constructor(self, input: bytes | str):
-
         if not self.constructor:
             raise UnknownABI()
 
@@ -126,3 +133,24 @@ class ABIDecoder:
         return self._decode_primitive(
             (b"\x00" * 4) + input, defaultdict(lambda: self.constructor)
         )
+
+
+class SignatureDecoder:
+    selector: bytes
+    name: str
+    inputs: list[str]
+    outputs: list[str]
+
+    def __init__(self, signature: str):
+        self.name, self.inputs, self.outputs = parse_signature(signature)
+        self.selector = function_signature_to_4byte_selector(
+            f'{self.name}({",".join(self.inputs)})'
+        )
+
+    def decode_input(self, input: str | bytes) -> tuple[Any, ...]:
+        input = hex_to_bytes(input)
+        return decode(self.inputs, input)
+
+    def decode_output(self, input: str | bytes) -> tuple[Any, ...]:
+        input = hex_to_bytes(input)
+        return decode(self.outputs, input)

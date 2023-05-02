@@ -19,3 +19,7 @@ class DecodingError(PySADError):
 
 class UnknownABI(PySADError):
     pass
+
+
+class InvalidSignature(PySADError):
+    pass
