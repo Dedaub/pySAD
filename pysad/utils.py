@@ -58,13 +58,13 @@ def fix_reference_log_inputs(inputs: list[dict]) -> list[dict]:
     return _inputs
 
 
-def is_equivalent_runtime_opcode(init: Instruction, runtime: Instruction):
+def is_equivalent_runtime_opcode(runtime: Instruction, init: Instruction):
     # Handle the case of immutable value substitution
-    if runtime.name.startswith("PUSH"):
-        return init.name == runtime.name and (
-            init.operand == runtime.operand or runtime.operand == 0
+    if init.name.startswith("PUSH"):
+        return runtime.name == init.name and (
+            runtime.operand == init.operand or init.operand == 0
         )
-    return init.name == runtime.name
+    return runtime.name == init.name
 
 
 def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
