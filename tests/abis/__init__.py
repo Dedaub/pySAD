@@ -10,3 +10,5 @@ from .universal_router import (
     create_calldata as UNIVERSAL_ROUTER_CREATE,
     bytecode as UNIVERSAL_ROUTER_BYTECODE,
 )
+
+from .weth import abi as WETH_ABI

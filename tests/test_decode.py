@@ -10,6 +10,7 @@ from .abis import (
     PERMIT2_BYTECODE,
     UNIVERSAL_ROUTER_BYTECODE,
     UNIVERSAL_ROUTER_CREATE,
+    WETH_ABI,
 )
 from pysad.decoder import ABIDecoder, SignatureDecoder
 
@@ -205,3 +206,65 @@ def test_signature(
     assert i_expected == sig.decode_input(input)
     if output:
         assert o_expected == sig.decode_output(output)
+
+
+@pytest.mark.parametrize(
+    "abi,topics,memory,expected",
+    [
+        (
+            WETH_ABI,
+            [
+                "0xDDF252AD1BE2C89B69C2B068FC378DAA952BA7F163C4A11628F55A4DF523B3EF",
+                "0x000000000000000000000000EB093C39FC8DED8C4D043C367D4BD75321E8A7C6",
+                "0x00000000000000000000000068B3465833FB72A70ECDF485E0E4C7BD8665FC45",
+            ],
+            "0x0000000000000000000000000000000000000000000000000577F9EFB3EEE9C1",
+            {
+                "src": "0xeb093c39fc8ded8c4d043c367d4bd75321e8a7c6",
+                "dst": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+                "wad": 394058300329486785,
+            },
+        ),
+        (
+            WETH_ABI,
+            [
+                "0x7FCF532C15F0A6DB0BD6D0E038BEA71D30D808C7D98CB3BF7268A95BF5081B65",
+                "0x00000000000000000000000068B3465833FB72A70ECDF485E0E4C7BD8665FC45",
+            ],
+            "0x0000000000000000000000000000000000000000000000000577F9EFB3EEE9C1",
+            {
+                "src": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+                "wad": 394058300329486785,
+            },
+        ),
+        (
+            WETH_ABI,
+            [
+                "0xE1FFFCC4923D04B559F4D29A8BFC6CDA04EB5B0D3C460751C2402C5C5CC9109C",
+                "0x00000000000000000000000068B3465833FB72A70ECDF485E0E4C7BD8665FC45",
+            ],
+            "0x00000000000000000000000000000000000000000000000000B1A2BC2EC50000",
+            {
+                "dst": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+                "wad": 50000000000000000,
+            },
+        ),
+        (
+            WETH_ABI,
+            [
+                "0xDDF252AD1BE2C89B69C2B068FC378DAA952BA7F163C4A11628F55A4DF523B3EF",
+                "0x00000000000000000000000068B3465833FB72A70ECDF485E0E4C7BD8665FC45",
+                "0x000000000000000000000000EB093C39FC8DED8C4D043C367D4BD75321E8A7C6",
+            ],
+            "0x00000000000000000000000000000000000000000000000000B1A2BC2EC50000",
+            {
+                "src": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+                "dst": "0xeb093c39fc8ded8c4d043c367d4bd75321e8a7c6",
+                "wad": 50000000000000000,
+            },
+        ),
+    ],
+)
+def test_event(abi: list[dict], topics: list[str], memory: str, expected: dict):
+    contract = ABIDecoder(abi)
+    assert expected == contract.decode_event(topics, memory)

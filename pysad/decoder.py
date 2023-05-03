@@ -92,7 +92,7 @@ class ABIDecoder:
             ),
         )
 
-    def decode_event(self, topics: list[str | bytes], memory: str | bytes):
+    def decode_event(self, topics: list[str] | list[bytes], memory: str | bytes):
         if len(topics) == 0:
             return {}
 
@@ -100,6 +100,7 @@ class ABIDecoder:
         memory = hex_to_bytes(memory)
 
         selector = topics[0]
+        topics = topics[1:]
         event_abi = self.events.get(selector)  # type: ignore
         if event_abi is None:
             raise UnknownABI
@@ -111,7 +112,10 @@ class ABIDecoder:
         topic_types = [[t] for (t, b) in zip(types, index_bmap) if b]
         memory_types = [t for (t, b) in zip(types, index_bmap) if not b]
 
-        decoded_topics = list(starmap(decode, zip(topic_types, topics)))
+        decoded_topics = list(
+            # use lambda to extract tuple from decode
+            map(lambda x: x[0], starmap(decode, zip(topic_types, topics)))
+        )
         decoded_memory = list(decode(memory_types, memory))
 
         args = [
@@ -119,7 +123,7 @@ class ABIDecoder:
             for indexed in index_bmap
         ]
 
-        processed_abi = {k: v for k, v in event_abi if k != "inputs"}
+        processed_abi = {k: v for k, v in event_abi.items() if k != "inputs"}
         processed_abi["inputs"] = fix_reference_log_inputs(event_abi["inputs"])
 
         return named_tree(processed_abi["inputs"], args)
