@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 from itertools import starmap
-from typing import Any
 
 from eth_abi.abi import decode
 from eth_utils.abi import (
@@ -158,12 +157,12 @@ class SignatureDecoder:
             f'{self.name}({",".join(self.inputs)})'
         )
 
-    def decode_input(self, input: str | bytes) -> tuple[Any, ...]:
+    def decode_input(self, input: str | bytes) -> tuple:
         input = hex_to_bytes(input)
         if input.startswith(self.selector):
             input = input[4:]
         return decode(self.inputs, input)
 
-    def decode_output(self, input: str | bytes) -> tuple[Any, ...]:
+    def decode_output(self, input: str | bytes) -> tuple:
         input = hex_to_bytes(input)
         return decode(self.outputs, input)
