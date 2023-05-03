@@ -156,6 +156,8 @@ class SignatureDecoder:
 
     def decode_input(self, input: str | bytes) -> tuple[Any, ...]:
         input = hex_to_bytes(input)
+        if input.startswith(self.selector):
+            input = input[4:]
         return decode(self.inputs, input)
 
     def decode_output(self, input: str | bytes) -> tuple[Any, ...]:

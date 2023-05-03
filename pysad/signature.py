@@ -24,7 +24,10 @@ def parse_signature(signature: str) -> tuple[str, list[str], list[str]]:
 
 def split_signature(signature: str) -> tuple[str, str, str]:
     # assumes a well formed signature
-    func_name, io = signature.split("(")
+    func_name, io = (
+        signature[: signature.find("(")],
+        signature[signature.find("(") :],
+    )
     inputs: str | None = None
     outputs: str | None = None
 
