@@ -111,14 +111,12 @@ class ABIDecoder:
         topic_types = [[t] for (t, b) in zip(types, index_bmap) if b]
         memory_types = [t for (t, b) in zip(types, index_bmap) if not b]
 
-        decoded_topics = list(
-            # use lambda to extract tuple from decode
-            map(lambda x: x[0], starmap(decode, zip(topic_types, topics)))
-        )
-        decoded_memory = list(decode(memory_types, memory))
+        # use lambda to extract tuple from decode
+        decoded_topics = map(lambda x: x[0], starmap(decode, zip(topic_types, topics)))
+        decoded_memory = iter(decode(memory_types, memory))
 
         args = [
-            decoded_topics.pop(0) if indexed else decoded_memory.pop(0)
+            next(decoded_topics) if indexed else next(decoded_memory)
             for indexed in index_bmap
         ]
 
