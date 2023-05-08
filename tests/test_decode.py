@@ -191,7 +191,21 @@ def test_missing_constructor(abi: list[dict], calldata: str, bytecode: str):
             ("0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f", 735222617722247178),
             "0x0000000000000000000000000000000000000000000000000000000000000001",
             (True,),
-        )
+        ),
+        (
+            "transfer(address,uint256)()",
+            "a9059cbb000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f0000000000000000000000000000000000000000000000000a340913502ad80a",
+            ("0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f", 735222617722247178),
+            None,
+            None,
+        ),
+        (
+            "transfer(address,uint256)",
+            "a9059cbb000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f0000000000000000000000000000000000000000000000000a340913502ad80a",
+            ("0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f", 735222617722247178),
+            None,
+            None,
+        ),
     ],
 )
 def test_signature(

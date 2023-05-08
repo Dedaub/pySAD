@@ -14,10 +14,14 @@ def parse_signature(signature: str) -> tuple[str, list[str], list[str]]:
         input_types = extract_types(inputs)
     except Exception as e:
         raise InvalidSignature("Unable to parse input types") from e
-    try:
-        output_types = extract_types(outputs)
-    except Exception as e:
-        raise InvalidSignature("Unable to parse output types") from e
+
+    if outputs == "":
+        output_types = []
+    else:
+        try:
+            output_types = extract_types(outputs)
+        except Exception as e:
+            raise InvalidSignature("Unable to parse output types") from e
 
     return name, input_types, output_types
 
