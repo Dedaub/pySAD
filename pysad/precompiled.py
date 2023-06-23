@@ -96,9 +96,9 @@ def decode_modexp(abi: dict, calldata: bytes):
     if len(calldata) < 96:
         raise DecodingError
 
-    Bsize = int.from_bytes(calldata[0:31], "big")
-    Esize = int.from_bytes(calldata[32:63], "big")
-    Msize = int.from_bytes(calldata[64:95], "big")
+    Bsize = int.from_bytes(calldata[0:32], "big")
+    Esize = int.from_bytes(calldata[32:64], "big")
+    Msize = int.from_bytes(calldata[64:96], "big")
 
     if len(calldata[96:]) < Bsize + Esize + Msize:
         raise DecodingError
@@ -106,12 +106,12 @@ def decode_modexp(abi: dict, calldata: bytes):
     return named_tree(
         abi["inputs"],
         [
-            calldata[0:31],  # Bsize
-            calldata[32:63],  # Esize
-            calldata[64:95],  # Msize
-            calldata[96 : (96 + Bsize - 1)],  # B
-            calldata[(96 + Bsize) : (96 + Bsize + Esize - 1)],  # E
-            calldata[(96 + Bsize + Esize) : (96 + Bsize + Esize + Msize - 1)],  # M
+            calldata[0:32],  # Bsize
+            calldata[32:64],  # Esize
+            calldata[64:96],  # Msize
+            calldata[96 : (96 + Bsize)],  # B
+            calldata[(96 + Bsize) : (96 + Bsize + Esize)],  # E
+            calldata[(96 + Bsize + Esize) : (96 + Bsize + Esize + Msize)],  # M
         ],
     )
 
@@ -122,8 +122,8 @@ def decode_blake2f(abi: dict, calldata: bytes):
     function blake2f(rounds: bytes4, h: bytes64, m: bytes128, t: bytes16, f: bytes1)
     """
 
-    # if len(calldata) != 213:
-    #     raise DecodingError
+    if len(calldata) != 213:
+        raise DecodingError
 
     return named_tree(
         abi["inputs"],
