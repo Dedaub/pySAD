@@ -75,12 +75,24 @@ def decode_special_case(abi: dict, calldata: bytes):
 
 
 def decode_single_input(abi: dict, calldata: bytes):
-    print("single input")
-    pass
+    """
+    Decode functions with a single argument..
+    eg. sha256, ripemd160, identity
+
+    Since there is only one argument, all calldata corresponds to this value.
+    """
+
+    return named_tree(abi["inputs"], [calldata])
 
 
 def decode_modexp(abi: dict, calldata: bytes):
-    pass
+    """
+    Decode modexp function input.
+    function modexp(Bsize, Esize, Msize, B, E, M)
+    where Bsize, Esize and Msize and the size in bytes of B, E, M respectively
+    """
+
+    print("modexp")
 
 
 # Map each precompiled function to its required decoder function
