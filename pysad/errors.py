@@ -23,3 +23,8 @@ class UnknownABI(PySADError):
 
 class InvalidSignature(PySADError):
     pass
+
+
+class UnknownPrecompile(PySADError):
+    def __init__(self, address: str):
+        super().__init__(address)
