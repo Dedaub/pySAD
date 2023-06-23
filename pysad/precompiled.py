@@ -116,12 +116,34 @@ def decode_modexp(abi: dict, calldata: bytes):
     )
 
 
+def decode_blake2f(abi: dict, calldata: bytes):
+    """
+    Decode blake2f function input.
+    function blake2f(rounds: bytes4, h: bytes64, m: bytes128, t: bytes16, f: bytes1)
+    """
+
+    # if len(calldata) != 213:
+    #     raise DecodingError
+
+    return named_tree(
+        abi["inputs"],
+        [
+            calldata[0:4],
+            calldata[4:68],
+            calldata[68:196],
+            calldata[196:212],
+            calldata[212:213],
+        ],
+    )
+
+
 # Map each precompiled function to its required decoder function
 SPECIAL_CASES = {
     "sha256": decode_single_input,
     "ripemd160": decode_single_input,
     "identity": decode_single_input,
     "modexp": decode_modexp,
+    "blake2f": decode_blake2f,
 }
 
 
