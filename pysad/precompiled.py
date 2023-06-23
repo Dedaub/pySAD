@@ -92,7 +92,28 @@ def decode_modexp(abi: dict, calldata: bytes):
     where Bsize, Esize and Msize and the size in bytes of B, E, M respectively
     """
 
-    print("modexp")
+    # Read the byte size of argument. Each size is given as an uint32
+    if len(calldata) < 96:
+        raise DecodingError
+
+    Bsize = int.from_bytes(calldata[0:31], "big")
+    Esize = int.from_bytes(calldata[32:63], "big")
+    Msize = int.from_bytes(calldata[64:95], "big")
+
+    if len(calldata[96:]) < Bsize + Esize + Msize:
+        raise DecodingError
+
+    return named_tree(
+        abi["inputs"],
+        [
+            calldata[0:31],  # Bsize
+            calldata[32:63],  # Esize
+            calldata[64:95],  # Msize
+            calldata[96 : (96 + Bsize - 1)],  # B
+            calldata[(96 + Bsize) : (96 + Bsize + Esize - 1)],  # E
+            calldata[(96 + Bsize + Esize) : (96 + Bsize + Esize + Msize - 1)],  # M
+        ],
+    )
 
 
 # Map each precompiled function to its required decoder function
