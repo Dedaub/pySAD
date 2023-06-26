@@ -7,7 +7,7 @@ A list of these functions is available here: https://www.evm.codes/precompiled
 """
 
 
-from typing import Any, Optional
+from typing import Any
 
 from eth_abi.abi import decode
 
@@ -15,7 +15,7 @@ from pysad.errors import DecodingError, UnknownPrecompile
 from pysad.utils import get_input_info, hex_to_bytes, named_tree
 
 
-def get_precompiled_abi(address: bytes | str) -> Optional[dict]:
+def get_precompiled_abi(address: bytes | str) -> dict | None:
     return PRECOMPILED_MAP.get(hex_to_bytes(address))
 
 
