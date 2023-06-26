@@ -109,6 +109,39 @@ def decode_blake2f(abi: dict, calldata: bytes) -> dict[str, Any]:
     )
 
 
+def decode_validateTerndermintHeader(abi: dict, calldata: bytes) -> dict[str, Any]:
+    """
+    Special Case: Decode validateTerndermintHeader function input.
+    validateTerndermintHeader is a precompile on the BNB chain.
+    function validateTerndermintHeader(length: uint256, chainID: uint256, height: uint64, appHash: bytes32, curValidatorSetHash: bytes32, nextValidatorSet: bytes, header: bytes)
+    """
+
+    # Calldata Layout:
+    # Value: | length   | chainID  | height  | appHash  | curValidatorSetHash | nextValidatorSet | header          |
+    # Size:  | 32 bytes | 32 bytes | 8 bytes | 32 bytes | 32 bytes            | length bytes     | remaining bytes |
+
+    length = int.from_bytes(calldata[0:32], "big")
+    chainID = int.from_bytes(calldata[32:64], "big")
+    height = int.from_bytes(calldata[64:72], "big")
+    appHash = calldata[72:104]
+    curValidatorSetHash = calldata[104:136]
+    nextValidatorSet = calldata[136 : length + 32]
+    header = calldata[length + 32 :]
+
+    return named_tree(
+        abi["inputs"],
+        [
+            length,
+            chainID,
+            height,
+            appHash,
+            curValidatorSetHash,
+            nextValidatorSet,
+            header,
+        ],
+    )
+
+
 def decode_verifyMerkleProof(abi: dict, calldata: bytes) -> dict[str, Any]:
     """
     Special Case: Decode verifyMerkleProof function input.
@@ -130,7 +163,15 @@ def decode_verifyMerkleProof(abi: dict, calldata: bytes) -> dict[str, Any]:
 
     return named_tree(
         abi["inputs"],
-        [storeName, keyLength, key, valueLength, value, appHash, proof],
+        [
+            storeName,
+            keyLength,
+            key,
+            valueLength,
+            value,
+            appHash,
+            proof,
+        ],
     )
 
 
@@ -141,6 +182,7 @@ SPECIAL_CASES = {
     "identity": decode_single_input,
     "modexp": decode_modexp,
     "blake2f": decode_blake2f,
+    "validateTerndermintHeader": decode_validateTerndermintHeader,
     "verifyMerkleProof": decode_verifyMerkleProof,
 }
 
@@ -299,6 +341,31 @@ PRECOMPILES = [
         ],
         "stateMutability": "pure",
     },
+    # validateTendermintHeader (BNB Chain)
+    # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/TendermintLightClient.sol
+    {
+        "selector": "",
+        "signature": "validateTerndermintHeader(uint256,uint256,uint64,bytes32,bytes32,bytes,bytes)",
+        "name": "validateTerndermintHeader",
+        "inputs": [
+            {"name": "length", "type": "uint256", "internalType": "uint256"},
+            {"name": "chainID", "type": "uint256", "internalType": "uint256"},
+            {"name": "height", "type": "uint64", "internalType": "uint64"},
+            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
+            {
+                "name": "curValidatorSetHash",
+                "type": "bytes32",
+                "internalType": "bytes32",
+            },
+            {"name": "nextValidatorSet", "type": "bytes", "internalType": "bytes"},
+            {"name": "header", "type": "bytes", "internalType": "bytes"},
+        ],
+        "address": "0x0000000000000000000000000000000000000100",
+        "outputs": [
+            {"name": "result", "type": "bytes32[128]", "internalType": "bytes32[128]"},
+        ],
+        "stateMutability": "pure",
+    },
     # verifyMerkleProof (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/MerkleProof.sol
     {
@@ -314,7 +381,51 @@ PRECOMPILES = [
             {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
             {"name": "proof", "type": "bytes", "internalType": "bytes"},
         ],
-        "address": "0x0000000000000000000000000000000000000065",
+        "address": "0x0000000000000000000000000000000000000101",
+        "outputs": [
+            {"name": "result", "type": "uint256", "internalType": "uint256"},
+        ],
+        "stateMutability": "pure",
+    },
+    # verifyBLSSignature (BNB Chain)
+    # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/SlashIndicator.sol
+    # TODO: UPDATE THIS ABI
+    {
+        "selector": "",
+        "signature": "verifyBLSSignature()",
+        "name": "verifyBLSSignature",
+        "inputs": [
+            {"name": "storeName", "type": "string", "internalType": "string"},
+            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "key", "type": "bytes", "internalType": "bytes"},
+            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "value", "type": "bytes", "internalType": "bytes"},
+            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
+            {"name": "proof", "type": "bytes", "internalType": "bytes"},
+        ],
+        "address": "0x0000000000000000000000000000000000000102",
+        "outputs": [
+            {"name": "result", "type": "uint256", "internalType": "uint256"},
+        ],
+        "stateMutability": "pure",
+    },
+    # BFTLightBlockValidate (BNB Chain)
+    # Defined in https://github.com/bnb-chain/BEPs/blob/master/BEP221.md
+    # TODO: UPDATE THIS ABI
+    {
+        "selector": "",
+        "signature": "BFTLightBlockValidate()",
+        "name": "BFTLightBlockValidate",
+        "inputs": [
+            {"name": "storeName", "type": "string", "internalType": "string"},
+            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "key", "type": "bytes", "internalType": "bytes"},
+            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "value", "type": "bytes", "internalType": "bytes"},
+            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
+            {"name": "proof", "type": "bytes", "internalType": "bytes"},
+        ],
+        "address": "0x0000000000000000000000000000000000000103",
         "outputs": [
             {"name": "result", "type": "uint256", "internalType": "uint256"},
         ],
