@@ -100,7 +100,7 @@ def decode_blake2f(abi: dict, calldata: bytes) -> dict[str, Any]:
     return named_tree(
         abi["inputs"],
         [
-            calldata[0:4],
+            int.from_bytes(calldata[0:4], "big"),
             calldata[4:68],
             calldata[68:196],
             calldata[196:212],
@@ -257,10 +257,10 @@ PRECOMPILES = [
     # NOTE: These types are not technically correct, but precompiled functions do not actually have a proper abi
     {
         "selector": "0x5cd8a5b3",
-        "signature": "blake2f(bytes4,bytes64,bytes128,bytes16,bytes1)",
+        "signature": "blake2f(uint4,bytes64,bytes128,bytes16,bytes1)",
         "name": "blake2f",
         "inputs": [
-            {"name": "rounds", "type": "bytes4", "internalType": "bytes4"},
+            {"name": "rounds", "type": "uint4", "internalType": "uint4"},
             {"name": "h", "type": "bytes64", "internalType": "bytes64"},
             {"name": "m", "type": "bytes128", "internalType": "bytes128"},
             {"name": "t", "type": "bytes16", "internalType": "bytes16"},
