@@ -183,12 +183,12 @@ PRECOMPILES = [
     # modexp
     {
         "selector": "0x99d63977",
-        "signature": "modexp(uint32,uint32,uint32,bytes,bytes,bytes)",
+        "signature": "modexp(uint256,uint256,uint256,bytes,bytes,bytes)",
         "name": "modexp",
         "inputs": [
-            {"name": "Bsize", "type": "uint32", "internalType": "uint32"},
-            {"name": "Esize", "type": "uint32", "internalType": "uint32"},
-            {"name": "Msize", "type": "uint32", "internalType": "uint32"},
+            {"name": "Bsize", "type": "uint256", "internalType": "uint256"},
+            {"name": "Esize", "type": "uint256", "internalType": "uint256"},
+            {"name": "Msize", "type": "uint256", "internalType": "uint256"},
             {"name": "B", "type": "bytes", "internalType": "bytes"},
             {"name": "E", "type": "bytes", "internalType": "bytes"},
             {"name": "M", "type": "bytes", "internalType": "bytes"},
@@ -257,10 +257,10 @@ PRECOMPILES = [
     # NOTE: These types are not technically correct, but precompiled functions do not actually have a proper abi
     {
         "selector": "0x5cd8a5b3",
-        "signature": "blake2f(uint4,bytes64,bytes128,bytes16,bytes1)",
+        "signature": "blake2f(uint32,bytes64,bytes128,bytes16,bytes1)",
         "name": "blake2f",
         "inputs": [
-            {"name": "rounds", "type": "uint4", "internalType": "uint4"},
+            {"name": "rounds", "type": "uint32", "internalType": "uint32"},
             {"name": "h", "type": "bytes64", "internalType": "bytes64"},
             {"name": "m", "type": "bytes128", "internalType": "bytes128"},
             {"name": "t", "type": "bytes16", "internalType": "bytes16"},
