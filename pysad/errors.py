@@ -26,5 +26,5 @@ class InvalidSignature(PySADError):
 
 
 class UnknownPrecompile(PySADError):
-    def __init__(self, address: str):
+    def __init__(self, address: bytes | str):
         super().__init__(address)
