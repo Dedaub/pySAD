@@ -78,9 +78,9 @@ def decode_modexp(abi: dict, calldata: bytes) -> dict[str, Any]:
     return named_tree(
         abi["inputs"],
         [
-            calldata[0:32],  # Bsize
-            calldata[32:64],  # Esize
-            calldata[64:96],  # Msize
+            Bsize,  # Bsize
+            Esize,  # Esize
+            Msize,  # Msize
             calldata[96 : (96 + Bsize)],  # B
             calldata[(96 + Bsize) : (96 + Bsize + Esize)],  # E
             calldata[(96 + Bsize + Esize) : (96 + Bsize + Esize + Msize)],  # M
@@ -183,12 +183,12 @@ PRECOMPILES = [
     # modexp
     {
         "selector": "0x99d63977",
-        "signature": "modexp(bytes32,bytes32,bytes32,bytes,bytes,bytes)",
+        "signature": "modexp(uint32,uint32,uint32,bytes,bytes,bytes)",
         "name": "modexp",
         "inputs": [
-            {"name": "Bsize", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "Esize", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "Msize", "type": "bytes32", "internalType": "bytes32"},
+            {"name": "Bsize", "type": "uint32", "internalType": "uint32"},
+            {"name": "Esize", "type": "uint32", "internalType": "uint32"},
+            {"name": "Msize", "type": "uint32", "internalType": "uint32"},
             {"name": "B", "type": "bytes", "internalType": "bytes"},
             {"name": "E", "type": "bytes", "internalType": "bytes"},
             {"name": "M", "type": "bytes", "internalType": "bytes"},
