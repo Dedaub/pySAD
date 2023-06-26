@@ -64,7 +64,7 @@ def decode_modexp(abi: dict, calldata: bytes) -> dict[str, Any]:
     where Bsize, Esize and Msize and the size in bytes of B, E, M respectively
     """
 
-    # Read the byte size of argument. Each size is given as an uint32
+    # Read the byte size of argument. Each size is given as a 32 byte uint (uint256)
     if len(calldata) < 96:
         raise DecodingError
 
@@ -100,12 +100,37 @@ def decode_blake2f(abi: dict, calldata: bytes) -> dict[str, Any]:
     return named_tree(
         abi["inputs"],
         [
-            int.from_bytes(calldata[0:4], "big"),
-            calldata[4:68],
-            calldata[68:196],
-            calldata[196:212],
-            calldata[212:213],
+            int.from_bytes(calldata[0:4], "big"),  # rounds
+            calldata[4:68],  # h
+            calldata[68:196],  # m
+            calldata[196:212],  # t
+            calldata[212:213],  # f
         ],
+    )
+
+
+def decode_verifyMerkleProof(abi: dict, calldata: bytes) -> dict[str, Any]:
+    """
+    Special Case: Decode verifyMerkleProof function input.
+    verifyMerkleProof is a precompile on the BNB chain.
+    function verifyMerkleProof(storeName: string, keyLength: uint256, key: bytes, valueLength: uint256, value: bytes, appHash: uint256, proof: bytes)
+    """
+
+    # Calldata Layout:
+    # Value: | storeName | keyLength | key             | valueLength | value           | appHash  | proof           |
+    # Size:  | 32 bytes  | 32 bytes  | keyLength bytes | 32 bytes    | keyLength bytes | 32 bytes | remaining bytes |
+
+    storeName = calldata[0:32].decode()
+    keyLength = int.from_bytes(calldata[32:64], "big")
+    key = calldata[64 : 64 + keyLength]
+    valueLength = int.from_bytes(calldata[64 + keyLength : 96 + keyLength], "big")
+    value = calldata[96 + keyLength : 96 + keyLength + valueLength]
+    appHash = calldata[96 + keyLength + valueLength : 128 + keyLength + valueLength]
+    proof = calldata[128 + keyLength + valueLength :]
+
+    return named_tree(
+        abi["inputs"],
+        [storeName, keyLength, key, valueLength, value, appHash, proof],
     )
 
 
@@ -116,10 +141,12 @@ SPECIAL_CASES = {
     "identity": decode_single_input,
     "modexp": decode_modexp,
     "blake2f": decode_blake2f,
+    "verifyMerkleProof": decode_verifyMerkleProof,
 }
 
 
 # Define precompiled function abis
+# NOTE: The selectors included have been manually added for conformity. Precompiled functions do not actually have selectors.
 PRECOMPILES = [
     # ecrecover
     {
@@ -269,6 +296,27 @@ PRECOMPILES = [
         "address": "0x0000000000000000000000000000000000000009",
         "outputs": [
             {"name": "h", "type": "bytes64", "internalType": "bytes64"},
+        ],
+        "stateMutability": "pure",
+    },
+    # verifyMerkleProof (BNB Chain)
+    # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/MerkleProof.sol
+    {
+        "selector": "0x493e017d",
+        "signature": "verifyMerkleProof(string,uint256,bytes,uint256,bytes,bytes32,bytes)",
+        "name": "verifyMerkleProof",
+        "inputs": [
+            {"name": "storeName", "type": "string", "internalType": "string"},
+            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "key", "type": "bytes", "internalType": "bytes"},
+            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
+            {"name": "value", "type": "bytes", "internalType": "bytes"},
+            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
+            {"name": "proof", "type": "bytes", "internalType": "bytes"},
+        ],
+        "address": "0x0000000000000000000000000000000000000065",
+        "outputs": [
+            {"name": "result", "type": "uint256", "internalType": "uint256"},
         ],
         "stateMutability": "pure",
     },
