@@ -27,4 +27,6 @@ class InvalidSignature(PySADError):
 
 class UnknownPrecompile(PySADError):
     def __init__(self, address: bytes | str):
+        if isinstance(address, (bytes, bytearray, memoryview)):
+            address = "0x" + address.hex()
         super().__init__(address)
