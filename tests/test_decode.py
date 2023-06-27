@@ -2,17 +2,19 @@
 
 import pytest
 
+from pysad.decoder import ABIDecoder, SignatureDecoder
 from pysad.errors import UnknownABI
+from pysad.precompiled import decode_precompiled
+
 from .abis import (
     PERMIT2_ABI,
-    UNIVERSAL_ROUTER_ABI,
-    PERMIT2_CREATE,
     PERMIT2_BYTECODE,
+    PERMIT2_CREATE,
+    UNIVERSAL_ROUTER_ABI,
     UNIVERSAL_ROUTER_BYTECODE,
     UNIVERSAL_ROUTER_CREATE,
     WETH_ABI,
 )
-from pysad.decoder import ABIDecoder, SignatureDecoder
 
 
 @pytest.mark.parametrize(
@@ -215,7 +217,6 @@ def test_signature(
     output: bytes | None,
     o_expected: tuple | None,
 ):
-
     sig = SignatureDecoder(signature)
     assert i_expected == sig.decode_input(input)
     if output:
@@ -282,3 +283,52 @@ def test_signature(
 def test_event(abi: list[dict], topics: list[str], memory: str, expected: dict):
     contract = ABIDecoder(abi)
     assert expected == contract.decode_event(topics, memory)
+
+
+@pytest.mark.parametrize(
+    "address,calldata,expected",
+    [
+        (
+            "0x0000000000000000000000000000000000000001",
+            "e3375d4cf79ac75aca3fdd272bb3ad8e2f3b7802dfd229393f16ee840a04c7bc000000000000000000000000000000000000000000000000000000000000001cb63a63b9163d225916fb761a999a8dfee9b1a68ccd1981bef5dabf3ed93f42d45e42fb96371631f85224ac64fa47f7e7d8d34d4656fb3057235d4dc3e05ab527",
+            {
+                "hash": b"\xe37]L\xf7\x9a\xc7Z\xca?\xdd'+\xb3\xad\x8e/;x\x02\xdf\xd2)9?\x16\xee\x84\n\x04\xc7\xbc",
+                "v": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1c",
+                "r": b'\xb6:c\xb9\x16="Y\x16\xfbv\x1a\x99\x9a\x8d\xfe\xe9\xb1\xa6\x8c\xcd\x19\x81\xbe\xf5\xda\xbf>\xd9?B\xd4',
+                "s": b"^B\xfb\x967\x161\xf8R$\xacd\xfaG\xf7\xe7\xd8\xd3MFV\xfb0W#]M\xc3\xe0Z\xb5'",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000002",
+            "4b263d5cd14bd09a9257b62ebc7cbd387e943953d6495d07f93a76c9b51c2ef3d1e3d1f932ed6096c701daed40d6cbf48d9a2f6d9d6e370aa77e387155b44399",
+            {
+                "data": b"K&=\\\xd1K\xd0\x9a\x92W\xb6.\xbc|\xbd8~\x949S\xd6I]\x07\xf9:v\xc9\xb5\x1c.\xf3\xd1\xe3\xd1\xf92\xed`\x96\xc7\x01\xda\xed@\xd6\xcb\xf4\x8d\x9a/m\x9dn7\n\xa7~8qU\xb4C\x99",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000005",
+            "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000200243cc2425278870c85f8e3fd5a160ef36de5f8191fa9c0b2daa3a9136d5acc200000000000000000000000000000000000000000000000000000000004000000800000000000011000000000000000000000000000000000000000000000001",
+            {
+                "Bsize": 32,
+                "Esize": 32,
+                "Msize": 32,
+                "B": b"\x02C\xcc$%'\x88p\xc8_\x8e?\xd5\xa1`\xef6\xde_\x81\x91\xfa\x9c\x0b-\xaa:\x916\xd5\xac\xc2",
+                "E": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x00\x00",
+                "M": b"\x08\x00\x00\x00\x00\x00\x00\x11\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000009",
+            "0000000c28c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05ba3d96883efef56e745cdec90cfbd1a2e2b44b1c22b8ec001e5de88b94ae2601485faac16e07b4323c1ddc16f74ed472df38f2e994fdec49dbf5745284f7dea5b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000001",
+            {
+                "rounds": 12,
+                "h": b"(\xc9\xbd\xf2g\xe6\tj;\xa7\xca\x84\x85\xaeg\xbb+\xf8\x94\xfer\xf3n<\xf16\x1d_:\xf5O\xa5\xd1\x82\xe6\xad\x7fR\x0eQ\x1fl>+\x8ch\x05\x9bk\xbdA\xfb\xab\xd9\x83\x1fy!~\x13\x19\xcd\xe0[",
+                "m": b"\xa3\xd9h\x83\xef\xefV\xe7E\xcd\xec\x90\xcf\xbd\x1a.+D\xb1\xc2+\x8e\xc0\x01\xe5\xde\x88\xb9J\xe2`\x14\x85\xfa\xac\x16\xe0{C#\xc1\xdd\xc1ot\xedG-\xf3\x8f.\x99O\xde\xc4\x9d\xbfWE(O}\xea[\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "t": b"@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "f": b"\x01",
+            },
+        ),
+    ],
+)
+def test_precompiled(address: str, calldata: str, expected: dict):
+    assert expected == decode_precompiled(address, calldata)
