@@ -199,6 +199,27 @@ def decode_verifyBLSSignature(abi: dict, calldata: bytes) -> dict[str, Any]:
     )
 
 
+def decode_BFTLightBlockValidate(abi: dict, calldata: bytes) -> dict[str, Any]:
+    """
+    Special Case: Decode BFTLightBlockValidate function input.
+    BFTLightBlockValidate is a precompile on the BNB chain.
+    function BFTLightBlockValidate(consensusStateLength: uint256, consensusState: bytes, lightBlock: bytes)
+    """
+
+    consensusStateLength = calldata[0:32]
+    consensusState = calldata[32 : 32 + consensusStateLength]
+    lightBlock = calldata[32 + consensusStateLength :]
+
+    return named_tree(
+        abi["inputs"],
+        [
+            consensusStateLength,
+            consensusState,
+            lightBlock,
+        ],
+    )
+
+
 # Map each precompiled function to its required decoder function
 SPECIAL_CASES = {
     "sha256": decode_single_input,
@@ -209,6 +230,7 @@ SPECIAL_CASES = {
     "validateTerndermintHeader": decode_validateTerndermintHeader,
     "verifyMerkleProof": decode_verifyMerkleProof,
     "verifyBLSSignature": decode_verifyBLSSignature,
+    "BFTLightBlockValidate": decode_BFTLightBlockValidate,
 }
 
 
@@ -431,23 +453,25 @@ PRECOMPILES = [
     },
     # BFTLightBlockValidate (BNB Chain)
     # Defined in https://github.com/bnb-chain/BEPs/blob/master/BEP221.md
-    # TODO: UPDATE THIS ABI
     {
-        "selector": "",
-        "signature": "BFTLightBlockValidate()",
+        "selector": "0xa391fe87",
+        "signature": "BFTLightBlockValidate(uint256,bytes,bytes)",
         "name": "BFTLightBlockValidate",
         "inputs": [
-            {"name": "storeName", "type": "string", "internalType": "string"},
-            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "key", "type": "bytes", "internalType": "bytes"},
-            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "value", "type": "bytes", "internalType": "bytes"},
-            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "proof", "type": "bytes", "internalType": "bytes"},
+            {
+                "name": "consensusStateLength",
+                "type": "uint256",
+                "internalType": "uint256",
+            },
+            {"name": "consensusState", "type": "bytes", "internalType": "bytes"},
+            {"name": "lightBlock", "type": "bytes", "internalType": "bytes"},
         ],
         "address": "0x0000000000000000000000000000000000000103",
         "outputs": [
-            {"name": "result", "type": "uint256", "internalType": "uint256"},
+            {"name": "result", "type": "bytes", "internalType": "bytes"},
+            # Output is encoded in the following format
+            # Value: | validatorSetChanged | empty    | consensusStateLength | newConsensusState          |
+            # Size : | 1 byte              | 23 bytes | 8 bytes              | consensusStateLength bytes |
         ],
         "stateMutability": "pure",
     },
