@@ -109,11 +109,11 @@ def decode_blake2f(abi: dict, calldata: bytes) -> dict[str, Any]:
     )
 
 
-def decode_validateTerndermintHeader(abi: dict, calldata: bytes) -> dict[str, Any]:
+def decode_validateTendermintHeader(abi: dict, calldata: bytes) -> dict[str, Any]:
     """
-    Special Case: Decode validateTerndermintHeader function input.
-    validateTerndermintHeader is a precompile on the BNB chain.
-    function validateTerndermintHeader(length: uint256, chainID: uint256, height: uint64, appHash: bytes32, curValidatorSetHash: bytes32, nextValidatorSet: bytes, header: bytes)
+    Special Case: Decode validateTendermintHeader function input.
+    validateTendermintHeader is a precompile on the BNB chain.
+    function validateTendermintHeader(length: uint256, chainID: uint256, height: uint64, appHash: bytes32, curValidatorSetHash: bytes32, nextValidatorSet: bytes, header: bytes)
     """
 
     # Calldata Layout:
@@ -227,7 +227,7 @@ SPECIAL_CASES = {
     "identity": decode_single_input,
     "modexp": decode_modexp,
     "blake2f": decode_blake2f,
-    "validateTerndermintHeader": decode_validateTerndermintHeader,
+    "validateTendermintHeader": decode_validateTendermintHeader,
     "verifyMerkleProof": decode_verifyMerkleProof,
     "verifyBLSSignature": decode_verifyBLSSignature,
     "BFTLightBlockValidate": decode_BFTLightBlockValidate,
@@ -391,9 +391,9 @@ PRECOMPILES = [
     # validateTendermintHeader (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/TendermintLightClient.sol
     {
-        "selector": "",
-        "signature": "validateTerndermintHeader(uint256,uint256,uint64,bytes32,bytes32,bytes,bytes)",
-        "name": "validateTerndermintHeader",
+        "selector": "0x26507b88",
+        "signature": "validateTendermintHeader(uint256,uint256,uint64,bytes32,bytes32,bytes,bytes)",
+        "name": "validateTendermintHeader",
         "inputs": [
             {"name": "length", "type": "uint256", "internalType": "uint256"},
             {"name": "chainID", "type": "uint256", "internalType": "uint256"},
