@@ -48,3 +48,17 @@
 >>> signature.decode_output("0x000000000...1")
     (True,)
 ```
+
+## Decoding Precompiled Functions
+
+`pysad` can also decode calls to precompiled functions.
+Supported precompiled functions are
+- 0x0...001 to 0x0...009 on the Main Chain
+- 0x0...100 to 0x0...103 on the BNB Chain
+
+```python
+>>> decode_precompiled("0x00...02", "0x4b263d5cd14b...")
+    {
+        "data": b"K&=\\\xd1K\xd0\x9a\x92W\xb6.\xbc|\xbd8~\x949S\xd6I]\x07\xf9:v\xc9\xb5\x1c.\xf3\xd1\xe3\xd1\xf92\xed`\x96\xc7\x01\xda\xed@\xd6\xcb\xf4\x8d\x9a/m\x9dn7\n\xa7~8qU\xb4C\x99",
+    }
+```

@@ -2,17 +2,19 @@
 
 import pytest
 
+from pysad.decoder import ABIDecoder, SignatureDecoder
 from pysad.errors import UnknownABI
+from pysad.precompiled import decode_precompiled
+
 from .abis import (
     PERMIT2_ABI,
-    UNIVERSAL_ROUTER_ABI,
-    PERMIT2_CREATE,
     PERMIT2_BYTECODE,
+    PERMIT2_CREATE,
+    UNIVERSAL_ROUTER_ABI,
     UNIVERSAL_ROUTER_BYTECODE,
     UNIVERSAL_ROUTER_CREATE,
     WETH_ABI,
 )
-from pysad.decoder import ABIDecoder, SignatureDecoder
 
 
 @pytest.mark.parametrize(
@@ -215,7 +217,6 @@ def test_signature(
     output: bytes | None,
     o_expected: tuple | None,
 ):
-
     sig = SignatureDecoder(signature)
     assert i_expected == sig.decode_input(input)
     if output:
@@ -282,3 +283,142 @@ def test_signature(
 def test_event(abi: list[dict], topics: list[str], memory: str, expected: dict):
     contract = ABIDecoder(abi)
     assert expected == contract.decode_event(topics, memory)
+
+
+@pytest.mark.parametrize(
+    "address,calldata,expected",
+    [
+        (
+            "0x0000000000000000000000000000000000000001",
+            "e3375d4cf79ac75aca3fdd272bb3ad8e2f3b7802dfd229393f16ee840a04c7bc000000000000000000000000000000000000000000000000000000000000001cb63a63b9163d225916fb761a999a8dfee9b1a68ccd1981bef5dabf3ed93f42d45e42fb96371631f85224ac64fa47f7e7d8d34d4656fb3057235d4dc3e05ab527",
+            {
+                "hash": b"\xe37]L\xf7\x9a\xc7Z\xca?\xdd'+\xb3\xad\x8e/;x\x02\xdf\xd2)9?\x16\xee\x84\n\x04\xc7\xbc",
+                "v": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1c",
+                "r": b'\xb6:c\xb9\x16="Y\x16\xfbv\x1a\x99\x9a\x8d\xfe\xe9\xb1\xa6\x8c\xcd\x19\x81\xbe\xf5\xda\xbf>\xd9?B\xd4',
+                "s": b"^B\xfb\x967\x161\xf8R$\xacd\xfaG\xf7\xe7\xd8\xd3MFV\xfb0W#]M\xc3\xe0Z\xb5'",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000002",
+            "4b263d5cd14bd09a9257b62ebc7cbd387e943953d6495d07f93a76c9b51c2ef3d1e3d1f932ed6096c701daed40d6cbf48d9a2f6d9d6e370aa77e387155b44399",
+            {
+                "data": b"K&=\\\xd1K\xd0\x9a\x92W\xb6.\xbc|\xbd8~\x949S\xd6I]\x07\xf9:v\xc9\xb5\x1c.\xf3\xd1\xe3\xd1\xf92\xed`\x96\xc7\x01\xda\xed@\xd6\xcb\xf4\x8d\x9a/m\x9dn7\n\xa7~8qU\xb4C\x99",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000003",
+            "7046f8cc3d057a214bceef6a90b7e0575d97f0beb30e38553013b5b18bb5fabf16e2d890ecfb89718990fe180cff1fed3d2c72022670ddabf5fd6f1d6b175474e89094c44da98b954eedeac495271d0f0000000000000000000000000000000000000000000000010e9deaaf401e0000",
+            {
+                "data": b"pF\xf8\xcc=\x05z!K\xce\xefj\x90\xb7\xe0W]\x97\xf0\xbe\xb3\x0e8U0\x13\xb5\xb1\x8b\xb5\xfa\xbf\x16\xe2\xd8\x90\xec\xfb\x89q\x89\x90\xfe\x18\x0c\xff\x1f\xed=,r\x02&p\xdd\xab\xf5\xfdo\x1dk\x17Tt\xe8\x90\x94\xc4M\xa9\x8b\x95N\xed\xea\xc4\x95'\x1d\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x0e\x9d\xea\xaf@\x1e\x00\x00"
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000004",
+            "63c08c1c5f223e7f6a85a0405fb86610fcffd99493bca242a056d7daeed9a8ae7b975b4c4f4be55a1634eb734869bb53825a56932b03c2a961d861485b91e53f",
+            {
+                "data": b'c\xc0\x8c\x1c_">\x7fj\x85\xa0@_\xb8f\x10\xfc\xff\xd9\x94\x93\xbc\xa2B\xa0V\xd7\xda\xee\xd9\xa8\xae{\x97[LOK\xe5Z\x164\xebsHi\xbbS\x82ZV\x93+\x03\xc2\xa9a\xd8aH[\x91\xe5?'
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000005",
+            "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000200243cc2425278870c85f8e3fd5a160ef36de5f8191fa9c0b2daa3a9136d5acc200000000000000000000000000000000000000000000000000000000004000000800000000000011000000000000000000000000000000000000000000000001",
+            {
+                "Bsize": 32,
+                "Esize": 32,
+                "Msize": 32,
+                "B": b"\x02C\xcc$%'\x88p\xc8_\x8e?\xd5\xa1`\xef6\xde_\x81\x91\xfa\x9c\x0b-\xaa:\x916\xd5\xac\xc2",
+                "E": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x00\x00",
+                "M": b"\x08\x00\x00\x00\x00\x00\x00\x11\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000006",
+            "1a32e48a7f62bf3ad48681d0e961f999deb91ce4cf19187ac65a5198304f0d171c6f08ed884441f5bac2af4d4711c2b90ede9ab1efa527e6ecf9487771aed9362ca56ae478c249640c03c03992e7176daca84395f06ba4a592085498f5f1134f1c26a3bdc037e2a691acd9b7d101cfe199b9c9722af66d096e0ee65817f2cffa",
+            {
+                "x1": b"\x1a2\xe4\x8a\x7fb\xbf:\xd4\x86\x81\xd0\xe9a\xf9\x99\xde\xb9\x1c\xe4\xcf\x19\x18z\xc6ZQ\x980O\r\x17",
+                "y1": b"\x1co\x08\xed\x88DA\xf5\xba\xc2\xafMG\x11\xc2\xb9\x0e\xde\x9a\xb1\xef\xa5'\xe6\xec\xf9Hwq\xae\xd96",
+                "x2": b",\xa5j\xe4x\xc2Id\x0c\x03\xc09\x92\xe7\x17m\xac\xa8C\x95\xf0k\xa4\xa5\x92\x08T\x98\xf5\xf1\x13O",
+                "y2": b"\x1c&\xa3\xbd\xc07\xe2\xa6\x91\xac\xd9\xb7\xd1\x01\xcf\xe1\x99\xb9\xc9r*\xf6m\tn\x0e\xe6X\x17\xf2\xcf\xfa",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000007",
+            "1edf3ff76267b56337a2d6665acd03059f33a87cfb00d9a57b668a8795ebdf7316b60c1f4f86d76209faf8c49b02fc9bacf4fbf7da16dc41c0a3886538889f5808856449bdd0699e1b086013fb981ad688793afb881cf6f6f340013436f2fdbb",
+            {
+                "x1": b"\x1e\xdf?\xf7bg\xb5c7\xa2\xd6fZ\xcd\x03\x05\x9f3\xa8|\xfb\x00\xd9\xa5{f\x8a\x87\x95\xeb\xdfs",
+                "y1": b"\x16\xb6\x0c\x1fO\x86\xd7b\t\xfa\xf8\xc4\x9b\x02\xfc\x9b\xac\xf4\xfb\xf7\xda\x16\xdcA\xc0\xa3\x88e8\x88\x9fX",
+                "s": b"\x08\x85dI\xbd\xd0i\x9e\x1b\x08`\x13\xfb\x98\x1a\xd6\x88y:\xfb\x88\x1c\xf6\xf6\xf3@\x0146\xf2\xfd\xbb",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000008",
+            "0556ae33b821fc82408fd5fb3c42709362fd5426f119be69dc05efd11ad7ed65156c5d5a7caa6ca66164d39e66524f082cb15049d3f7d19d76021f42bdbaf831198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa158b227deca4090c40e3b24b23d8681eecdd0da559f7f67d206b29546fee9c551a1d9d88f5cc088fff7dd37c94748a95327e9160cfc021cc7bf209634298bcdf260e01b251f6f1c7e7ff4e580791dee8ea51d87a358e038b4efe30fac09383c10118c4d5b837bcc2bc89b5b398b5974e9f5944073b32078b7e231fec938883b004fc6369f7110fe3d25156c1bb9a72859cf2a04641f99ba4ee413c80da6a5fe422febda3c0c0632a56475b4214e5615e11e6dd3f96e6cea2854a87d4dacc5e55",
+            {
+                "x1": b"\x05V\xae3\xb8!\xfc\x82@\x8f\xd5\xfb<Bp\x93b\xfdT&\xf1\x19\xbei\xdc\x05\xef\xd1\x1a\xd7\xede",
+                "y1": b"\x15l]Z|\xaal\xa6ad\xd3\x9efRO\x08,\xb1PI\xd3\xf7\xd1\x9dv\x02\x1fB\xbd\xba\xf81",
+                "x2": b"\x19\x8e\x93\x93\x92\rH:r`\xbf\xb71\xfb]%\xf1\xaaI35\xa9\xe7\x12\x97\xe4\x85\xb7\xae\xf3\x12\xc2",
+                "y2": b'\x18\x00\xde\xef\x12\x1f\x1evBj\x00f^\\DygC"\xd4\xf7^\xda\xddF\xde\xbd\\\xd9\x92\xf6\xed',
+                "x3": b'\t\x06\x89\xd0X_\xf0u\xec\x9e\x99\xadi\x0c3\x95\xbcK13p\xb3\x8e\xf3U\xac\xda\xdc\xd1"\x97[',
+                "y3": b"\x12\xc8^\xa5\xdb\x8cm\xebJ\xabq\x80\x8d\xcb@\x8f\xe3\xd1\xe7i\x0cC\xd3{L\xe6\xcc\x01f\xfa}\xaa",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000009",
+            "0000000c28c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05ba3d96883efef56e745cdec90cfbd1a2e2b44b1c22b8ec001e5de88b94ae2601485faac16e07b4323c1ddc16f74ed472df38f2e994fdec49dbf5745284f7dea5b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000001",
+            {
+                "rounds": 12,
+                "h": b"(\xc9\xbd\xf2g\xe6\tj;\xa7\xca\x84\x85\xaeg\xbb+\xf8\x94\xfer\xf3n<\xf16\x1d_:\xf5O\xa5\xd1\x82\xe6\xad\x7fR\x0eQ\x1fl>+\x8ch\x05\x9bk\xbdA\xfb\xab\xd9\x83\x1fy!~\x13\x19\xcd\xe0[",
+                "m": b"\xa3\xd9h\x83\xef\xefV\xe7E\xcd\xec\x90\xcf\xbd\x1a.+D\xb1\xc2+\x8e\xc0\x01\xe5\xde\x88\xb9J\xe2`\x14\x85\xfa\xac\x16\xe0{C#\xc1\xdd\xc1ot\xedG-\xf3\x8f.\x99O\xde\xc4\x9d\xbfWE(O}\xea[\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "t": b"@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "f": b"\x01",
+            },
+        ),
+        # BNB PRECOMPILES - These test cases were manually created, may not be representative of actual input.
+        (
+            "0x0000000000000000000000000000000000000100",
+            "00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000038000000000000001400000000000000000000000000000000000000000000000000000000000001b5000000000000000000000000000000000000000000000000000000000005045a000000000000000000000000000000000000000000000000000000000005045a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005045a",
+            {
+                "length": 32,
+                "chainID": 56,
+                "height": 20,
+                "appHash": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xb5",
+                "curValidatorSetHash": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x04Z",
+                "nextValidatorSet": b"",
+                "header": b"\x00\x00\x00\x00\x00\x00\x00\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xb5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x04Z\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x04Z\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x04Z",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000101",
+            "0000000000000000000000000000000000000000000048656c6c6f576f726c64000000000000000000000000000000000000000000000000000000000000002800000000000000000000000000000000000000000000000000000000000000000000000005e2b47f000000000000000000000000000000000000000000000000000000000000001400000000000000000000000000000000025a2977000000000000000000000000000000000000000000000000000020b0b0e7f8b80000000000000000000000000000000000000000000000000000000000000000000000000000000000002db9f3b0d83e5b68",
+            {
+                "storeName": "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00HelloWorld",
+                "keyLength": 40,
+                "key": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\xe2\xb4\x7f",
+                "valueLength": 20,
+                "value": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02Z)w",
+                "appHash": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \xb0\xb0\xe7\xf8\xb8",
+                "proof": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-\xb9\xf3\xb0\xd8>[h",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000102",
+            "000000000000000000000000000000000000000000000000000000001d27a50d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e27ad11ac627c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000103",
+            {
+                "vote": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1d'\xa5\r",
+                "voteSignature": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0e'\xad\x11\xacb|",
+                "voteAddress": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x03",
+            },
+        ),
+        (
+            "0x0000000000000000000000000000000000000103",
+            "0000000000000000000000000000000000000000000000000000000000000028000000000000000000000000000000000000000000000000000000000000000000000015f9eb5f9800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ac447c49f680ed739e15118",
+            {
+                "consensusStateLength": 40,
+                "consensusState": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x15\xf9\xeb_\x98",
+                "lightBlock": b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\n\xc4G\xc4\x9fh\x0e\xd79\xe1Q\x18",
+            },
+        ),
+    ],
+)
+def test_precompiled(address: str, calldata: str, expected: dict):
+    assert expected == decode_precompiled(address, calldata)
