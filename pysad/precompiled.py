@@ -175,6 +175,30 @@ def decode_verifyMerkleProof(abi: dict, calldata: bytes) -> dict[str, Any]:
     )
 
 
+def decode_verifyBLSSignature(abi: dict, calldata: bytes) -> dict[str, Any]:
+    """
+    Special Case: Decode verifyBLSSignature function input.
+    verifyBLSSignature is a precompile on the BNB chain.
+    function verifyBLSSignature(vote: bytes32, voteSignature: bytes, voteAddress: bytes)
+    """
+
+    if len(calldata) != 176:
+        raise DecodingError
+
+    vote = calldata[0:32]
+    voteSignature = calldata[32:128]
+    voteAddress = calldata[128:176]
+
+    return named_tree(
+        abi["inputs"],
+        [
+            vote,
+            voteSignature,
+            voteAddress,
+        ],
+    )
+
+
 # Map each precompiled function to its required decoder function
 SPECIAL_CASES = {
     "sha256": decode_single_input,
@@ -184,6 +208,7 @@ SPECIAL_CASES = {
     "blake2f": decode_blake2f,
     "validateTerndermintHeader": decode_validateTerndermintHeader,
     "verifyMerkleProof": decode_verifyMerkleProof,
+    "verifyBLSSignature": decode_verifyBLSSignature,
 }
 
 
@@ -389,23 +414,18 @@ PRECOMPILES = [
     },
     # verifyBLSSignature (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/SlashIndicator.sol
-    # TODO: UPDATE THIS ABI
     {
-        "selector": "",
-        "signature": "verifyBLSSignature()",
+        "selector": "0xb470122c",
+        "signature": "verifyBLSSignature(bytes32,bytes,bytes)",
         "name": "verifyBLSSignature",
         "inputs": [
-            {"name": "storeName", "type": "string", "internalType": "string"},
-            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "key", "type": "bytes", "internalType": "bytes"},
-            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "value", "type": "bytes", "internalType": "bytes"},
-            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "proof", "type": "bytes", "internalType": "bytes"},
+            {"name": "vote", "type": "bytes32", "internalType": "bytes32"},
+            {"name": "voteSignature", "bytes": "uint256", "internalType": "bytes"},
+            {"name": "voteAddress", "type": "bytes", "internalType": "bytes"},
         ],
         "address": "0x0000000000000000000000000000000000000102",
         "outputs": [
-            {"name": "result", "type": "uint256", "internalType": "uint256"},
+            {"name": "output", "type": "bytes1", "internalType": "uint256"},
         ],
         "stateMutability": "pure",
     },
