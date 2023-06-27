@@ -53,7 +53,7 @@
 
 `pysad` can also decode calls to precompiled functions.
 Supported precompiled functions are
-- 0x0...01 to 0x0...09 on the Main Chain
+- 0x0...001 to 0x0...009 on the Main Chain
 - 0x0...100 to 0x0...103 on the BNB Chain
 
 ```python
