@@ -206,7 +206,7 @@ def decode_BFTLightBlockValidate(abi: dict, calldata: bytes) -> dict[str, Any]:
     function BFTLightBlockValidate(consensusStateLength: uint256, consensusState: bytes, lightBlock: bytes)
     """
 
-    consensusStateLength = calldata[0:32]
+    consensusStateLength = int.from_bytes(calldata[0:32], "big")
     consensusState = calldata[32 : 32 + consensusStateLength]
     lightBlock = calldata[32 + consensusStateLength :]
 
@@ -442,7 +442,7 @@ PRECOMPILES = [
         "name": "verifyBLSSignature",
         "inputs": [
             {"name": "vote", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "voteSignature", "bytes": "uint256", "internalType": "bytes"},
+            {"name": "voteSignature", "type": "bytes", "internalType": "bytes"},
             {"name": "voteAddress", "type": "bytes", "internalType": "bytes"},
         ],
         "address": "0x0000000000000000000000000000000000000102",
