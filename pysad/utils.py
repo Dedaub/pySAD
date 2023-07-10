@@ -18,7 +18,10 @@ def hex_to_bytes(input: str | bytes) -> bytes:
     if isinstance(input, (bytes, bytearray, memoryview)):
         return bytes(input)
     elif isinstance(input, str):
-        return bytes.fromhex(input.removeprefix("0x"))
+        normalized_hex = input.removeprefix("0x")
+        left_padding = "0" if len(normalized_hex) % 2 else ""
+
+        return bytes.fromhex(f"{left_padding}{normalized_hex}")
     else:
         raise BinaryDataError("Unable to decode input")
 
