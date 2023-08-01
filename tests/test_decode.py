@@ -308,12 +308,12 @@ def test_signature(
                     "inputs": [
                         {"indexed": False, "name": "test", "type": "string"},
                     ],
-                    "name": "NonIndexedRefernce",
+                    "name": "NonIndexedReference",
                     "type": "event",
                 }
             ],
             [
-                "0xf8603876c6c919b697b7f838608627ca0d703ee2e994f3d1fb3f0dedad03c29b",
+                "0x070b4299d78ef388a40cab45a84ef7001a713166afa3267f48da3d63fcb53173",
             ],
             "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000c68656c6c6f2c20776f726c640000000000000000000000000000000000000000",
             {"test": "hello, world"},
