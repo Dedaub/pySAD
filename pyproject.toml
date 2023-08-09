@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysad"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python Simple ABI Decoding"
 authors = ["Tony Rocco Valentine <tonyroccovalentine@protonmail.com>"]
 license = "MIT"
