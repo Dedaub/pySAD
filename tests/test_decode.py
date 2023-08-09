@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import pytest
-
 from pysad.decoder import ABIDecoder, SignatureDecoder
 from pysad.errors import UnknownABI
 from pysad.precompiled import decode_precompiled
@@ -276,6 +275,91 @@ def test_signature(
                 "src": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
                 "dst": "0xeb093c39fc8ded8c4d043c367d4bd75321e8a7c6",
                 "wad": 50000000000000000,
+            },
+        ),
+        # NOTE: The below are custom events which have been created solely for the purpose of testing.
+        # These have been created with `foundary`. Specifically, `chisel` with tracing enabled.
+        (
+            [
+                {
+                    "anonymous": False,
+                    "inputs": [
+                        {"indexed": True, "name": "test1", "type": "uint256"},
+                        {"indexed": False, "name": "test2", "type": "uint256"},
+                    ],
+                    "name": "NoReference",
+                    "type": "event",
+                }
+            ],
+            [
+                "0x93f322a0a02f76bc9d247dce9d0d03e00d0a2ce1a92f315f98d84da096886b65",
+                "0x000000000000000000000000000000000000000000000000000000000000001a",
+            ],
+            "0x0000000000000000000000000000000000000000000000000000000000000008",
+            {
+                "test1": 26,
+                "test2": 8,
+            },
+        ),
+        (
+            [
+                {
+                    "anonymous": False,
+                    "inputs": [
+                        {"indexed": False, "name": "test", "type": "string"},
+                    ],
+                    "name": "NonIndexedReference",
+                    "type": "event",
+                }
+            ],
+            [
+                "0x070b4299d78ef388a40cab45a84ef7001a713166afa3267f48da3d63fcb53173",
+            ],
+            "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000c68656c6c6f2c20776f726c640000000000000000000000000000000000000000",
+            {"test": "hello, world"},
+        ),
+        (
+            [
+                {
+                    "anonymous": False,
+                    "inputs": [
+                        {"indexed": True, "name": "test", "type": "string"},
+                    ],
+                    "name": "IndexedReference",
+                    "type": "event",
+                }
+            ],
+            [
+                "0xb5282c73b079f44e2d68c61bc0d431072ac8235ba110b38ab6d468e6ed452ab7",
+                "0x29bf7021020ea89dbd91ef52022b5a654b55ed418c9e7aba71ef3b43a51669f2",
+            ],
+            "0x",
+            {
+                "test": b"\x29\xbf\x70\x21\x02\x0e\xa8\x9d\xbd\x91\xef\x52\x02\x2b\x5a\x65\x4b\x55\xed\x41\x8c\x9e\x7a\xba\x71\xef\x3b\x43\xa5\x16\x69\xf2"
+            },
+        ),
+        (
+            [
+                {
+                    "anonymous": False,
+                    "inputs": [
+                        {"indexed": True, "name": "test1", "type": "string"},
+                        {"indexed": False, "name": "test2", "type": "string"},
+                        {"indexed": False, "name": "test3", "type": "uint256"},
+                    ],
+                    "name": "MixedReference",
+                    "type": "event",
+                }
+            ],
+            [
+                "0x596c14f170677e8244dead9999f146cf17f2731114c66d55e5eab65de99b9cdd",
+                "0x29bf7021020ea89dbd91ef52022b5a654b55ed418c9e7aba71ef3b43a51669f2",
+            ],
+            "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000007e7000000000000000000000000000000000000000000000000000000000000000e676f6f646279652c20776f726c64000000000000000000000000000000000000",
+            {
+                "test1": b"\x29\xbf\x70\x21\x02\x0e\xa8\x9d\xbd\x91\xef\x52\x02\x2b\x5a\x65\x4b\x55\xed\x41\x8c\x9e\x7a\xba\x71\xef\x3b\x43\xa5\x16\x69\xf2",
+                "test2": "goodbye, world",
+                "test3": 2023,
             },
         ),
     ],

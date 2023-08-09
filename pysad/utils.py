@@ -41,9 +41,11 @@ def get_input_info(inputs: list[dict]) -> tuple[list[str], list[str]]:
     return types, names
 
 
-def fix_log_types(types: list[str], rtypes: list[bool]) -> list[str]:
+def fix_log_types(
+    types: list[str], rtypes: list[bool], index_bmap: list[bool]
+) -> list[str]:
     # reference structures are stored in log topics as the sha3 hash of the structure
-    return ["bytes32" if b else t for (t, b) in zip(types, rtypes)]
+    return ["bytes32" if b and i else t for (t, b, i) in zip(types, rtypes, index_bmap)]
 
 
 def get_log_inputs(inputs: list[dict]) -> tuple[list[bool], list[bool]]:
@@ -57,7 +59,6 @@ def fix_reference_log_inputs(inputs: list[dict]) -> list[dict]:
     for i in _inputs:
         if is_reference_type(i):
             i["type"] = "bytes32"
-            del i["inputs"]
     return _inputs
 
 
@@ -71,7 +72,6 @@ def is_equivalent_runtime_opcode(runtime: Instruction, init: Instruction):
 
 
 def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
-
     init_bytecode = list(disassemble_all(input))
     runtime_bytecode = list(disassemble_all(bytecode))
 
@@ -81,7 +81,6 @@ def extract_constructor_args(input: bytes, bytecode: bytes) -> bytes | None:
                 is_equivalent_runtime_opcode, zip(runtime_bytecode, init_bytecode[i:])
             )
         ):
-
             # need to convert things back to bytecode from
             # the instructions list since the indicies don't line up
             constructor_bytecode = init_bytecode[:i]

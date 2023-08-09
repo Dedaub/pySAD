@@ -106,7 +106,7 @@ class ABIDecoder:
 
         types, _ = get_input_info(event_abi["inputs"])
         rtypes_bmap, index_bmap = get_log_inputs(event_abi["inputs"])
-        types = fix_log_types(types, rtypes_bmap)
+        types = fix_log_types(types, rtypes_bmap, index_bmap)
 
         topic_types = [[t] for (t, b) in zip(types, index_bmap) if b]
         memory_types = [t for (t, b) in zip(types, index_bmap) if not b]
@@ -126,7 +126,6 @@ class ABIDecoder:
         return named_tree(processed_abi["inputs"], args)
 
     def decode_constructor(self, input: bytes | str, bytecode: bytes | str):
-
         if not self.constructor:
             raise UnknownABI()
 
