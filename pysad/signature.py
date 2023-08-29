@@ -15,7 +15,7 @@ def parse_signature(signature: str) -> tuple[str, list[str], list[str]]:
     except Exception as e:
         raise InvalidSignature("Unable to parse input types") from e
 
-    if outputs == "":
+    if outputs in ["", "()"]:
         output_types = []
     else:
         try:
