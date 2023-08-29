@@ -11,7 +11,7 @@ from pysad.errors import InvalidSignature
 def parse_signature(signature: str) -> tuple[str, list[str], list[str]]:
     name, inputs, outputs = split_signature(signature)
     try:
-        input_types = extract_types(inputs)
+        input_types = [] if inputs == "()" else extract_types(inputs)
     except Exception as e:
         raise InvalidSignature("Unable to parse input types") from e
 
