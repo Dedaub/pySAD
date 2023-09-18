@@ -7,30 +7,78 @@ A list of these functions is available here: https://www.evm.codes/precompiled
 """
 
 
+from itertools import starmap
 from typing import Any
 
 from eth_abi.abi import decode
 
+from pysad.arb_precomiles import ARB_PRECOMPILES
 from pysad.errors import DecodingError, UnknownPrecompile
-from pysad.utils import get_input_info, hex_to_bytes, named_tree
+from pysad.utils import (
+    fix_log_types,
+    fix_reference_log_inputs,
+    get_input_info,
+    get_log_inputs,
+    hex_to_bytes,
+    named_tree,
+)
 
 
-def get_precompiled_abi(address: bytes | str) -> dict | None:
-    return PRECOMPILED_MAP.get(hex_to_bytes(address))
+def get_precompiled_abi(address: bytes | str, selector: bytes | str) -> dict | None:
+    return PRECOMPILED_MAP.get((hex_to_bytes(address), hex_to_bytes(selector)))
 
 
-def decode_precompiled(address: bytes | str, input: bytes | str) -> dict[str, Any]:
+def decode_precompiled_event(
+    address: bytes | str, topics: list[str] | list[bytes], memory: str | bytes
+) -> dict[str, Any]:
     """
-    Decode calldata for precompiled functions.
-    Returns a dict mapping the function's parameters to their values.
+    Decode calldata for precompiled events.
+    Returns a dict mapping the events's parameters to their values.
+    """
+    topics = list(map(hex_to_bytes, topics))
+    memory = hex_to_bytes(memory)
+
+    selector = topics[0]
+    topics = topics[1:]
+
+    # Check if this is actually a precompiled event
+    if (abi := get_precompiled_abi(address, selector)) is None:
+        raise UnknownPrecompile(address, selector)
+
+    types, _ = get_input_info(abi["inputs"])
+    rtypes_bmap, index_bmap = get_log_inputs(abi["inputs"])
+    types = fix_log_types(types, rtypes_bmap, index_bmap)
+
+    topic_types = [[t] for (t, b) in zip(types, index_bmap) if b]
+    memory_types = [t for (t, b) in zip(types, index_bmap) if not b]
+
+    decoded_topics = map(lambda x: x[0], starmap(decode, zip(topic_types, topics)))
+    decoded_memory = iter(decode(memory_types, memory))
+
+    args = [
+        next(decoded_topics) if indexed else next(decoded_memory)
+        for indexed in index_bmap
+    ]
+
+    processed_abi = {k: v for k, v in abi.items() if k != "inputs"}
+    processed_abi["inputs"] = fix_reference_log_inputs(abi["inputs"])
+
+    return named_tree(processed_abi["inputs"], args)
+
+
+def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[str, Any]:
+    """
+    Decode calldata for precompiled functions and errors.
+    Returns a dict mapping the function/error's parameters to their values.
     """
 
     # Precompiled functions do not have a selector, so the entire input is calldata
-    calldata = hex_to_bytes(input)
+    calldata = hex_to_bytes(input_data)
+    selector = calldata[:4]
 
     # Check if this is actually a precompiled function
-    if (abi := get_precompiled_abi(address)) is None:
-        raise UnknownPrecompile(address)
+    if (abi := get_precompiled_abi(address, selector)) is None:
+        raise UnknownPrecompile(address, selector)
 
     # Check if a special case is needed to handle this function
     if case_handler := SPECIAL_CASES.get(abi["name"]):
@@ -236,7 +284,7 @@ SPECIAL_CASES = {
 
 # Define precompiled function abis
 # NOTE: The selectors included have been manually added for conformity. Precompiled functions do not actually have selectors.
-PRECOMPILES = [
+PRECOMPILES = ARB_PRECOMPILES + [
     # ecrecover
     {
         "selector": "0x6e150a4d",
@@ -477,6 +525,8 @@ PRECOMPILES = [
     },
 ]
 
-
 # Map each address to its abi
-PRECOMPILED_MAP = {hex_to_bytes(abi["address"]): abi for abi in PRECOMPILES}
+PRECOMPILED_MAP = {
+    (hex_to_bytes(abi["address"]), hex_to_bytes(abi["selector"])): abi
+    for abi in PRECOMPILES
+}
