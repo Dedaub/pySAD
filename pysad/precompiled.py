@@ -12,7 +12,7 @@ from typing import Any
 
 from eth_abi.abi import decode
 
-from pysad.arb_precomiles import ARB_PRECOMPILES
+from pysad.arb_precompiles import ARB_PRECOMPILES
 from pysad.errors import DecodingError, UnknownPrecompile
 from pysad.utils import (
     fix_log_types,
@@ -25,7 +25,17 @@ from pysad.utils import (
 
 
 def get_precompiled_abi(address: bytes | str, selector: bytes | str) -> dict | None:
-    return PRECOMPILED_MAP.get((hex_to_bytes(address), hex_to_bytes(selector)))
+    address_abi = PRECOMPILED_MAP.get(hex_to_bytes(address))
+
+    if isinstance(address_abi, list):
+        for method in address_abi:
+            if method["selector"] == hex_to_bytes(selector):
+                return method
+
+    if isinstance(address_abi, dict):
+        return address_abi
+
+    return None
 
 
 def decode_precompiled_event(
@@ -86,6 +96,7 @@ def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[st
 
     # Decode the function normally
     types, _ = get_input_info(abi["inputs"])
+
     try:
         args = decode(types, calldata)
     except Exception as e:
@@ -284,249 +295,219 @@ SPECIAL_CASES = {
 
 # Define precompiled function abis
 # NOTE: The selectors included have been manually added for conformity. Precompiled functions do not actually have selectors.
-PRECOMPILES = ARB_PRECOMPILES + [
+PRECOMPILES = ARB_PRECOMPILES | {
     # ecrecover
-    {
+    "0x0000000000000000000000000000000000000001": {
+        "inputs": [
+            {"internalType": "bytes32", "name": "hash", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "v", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "r", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "s", "type": "bytes32"},
+        ],
+        "name": "ecrecover",
+        "outputs": [
+            {"interalType": "address", "name": "publicAddress", "type": "address"}
+        ],
         "selector": "0x6e150a4d",
         "signature": "ecrecover(bytes32,bytes32,bytes32,bytes32)",
-        "name": "ecrecover",
-        "inputs": [
-            {"name": "hash", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "v", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "r", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "s", "type": "bytes32", "internalType": "bytes32"},
-        ],
-        "address": "0x0000000000000000000000000000000000000001",
-        "outputs": [
-            {"name": "publicAddress", "type": "address", "interalType": "address"},
-        ],
         "stateMutability": "pure",
     },
     # sha256
-    {
+    "0x0000000000000000000000000000000000000002": {
+        "inputs": [{"internalType": "bytes", "name": "data", "type": "bytes"}],
+        "name": "sha256",
+        "outputs": [{"interalType": "bytes32", "name": "hash", "type": "bytes32"}],
         "selector": "0xbebc76dd",
         "signature": "sha256(bytes)",
-        "name": "sha256",
-        "inputs": [
-            {"name": "data", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000002",
-        "outputs": [
-            {"name": "hash", "type": "bytes32", "interalType": "bytes32"},
-        ],
         "stateMutability": "pure",
     },
     # ripemd160
-    {
+    "0x0000000000000000000000000000000000000003": {
+        "inputs": [{"internalType": "bytes", "name": "data", "type": "bytes"}],
+        "name": "ripemd160",
+        "outputs": [{"interalType": "bytes32", "name": "hash", "type": "bytes32"}],
         "selector": "0x9e641bf8",
         "signature": "ripemd160(bytes)",
-        "name": "ripemd160",
-        "inputs": [
-            {"name": "data", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000003",
-        "outputs": [
-            {"name": "hash", "type": "bytes32", "interalType": "bytes32"},
-        ],
         "stateMutability": "pure",
     },
     # identity
-    {
+    "0x0000000000000000000000000000000000000004": {
+        "inputs": [{"internalType": "bytes", "name": "data", "type": "bytes"}],
+        "name": "identity",
+        "outputs": [{"interalType": "bytes", "name": "data", "type": "bytes"}],
         "selector": "0x840f6120",
         "signature": "identity(bytes)",
-        "name": "identity",
-        "inputs": [
-            {"name": "data", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000004",
-        "outputs": [
-            {"name": "data", "type": "bytes", "interalType": "bytes"},
-        ],
         "stateMutability": "pure",
     },
     # modexp
-    {
+    "0x0000000000000000000000000000000000000005": {
+        "inputs": [
+            {"internalType": "uint256", "name": "Bsize", "type": "uint256"},
+            {"internalType": "uint256", "name": "Esize", "type": "uint256"},
+            {"internalType": "uint256", "name": "Msize", "type": "uint256"},
+            {"internalType": "bytes", "name": "B", "type": "bytes"},
+            {"internalType": "bytes", "name": "E", "type": "bytes"},
+            {"internalType": "bytes", "name": "M", "type": "bytes"},
+        ],
+        "name": "modexp",
+        "outputs": [{"interalType": "bytes", "name": "value", "type": "bytes"}],
         "selector": "0x99d63977",
         "signature": "modexp(uint256,uint256,uint256,bytes,bytes,bytes)",
-        "name": "modexp",
-        "inputs": [
-            {"name": "Bsize", "type": "uint256", "internalType": "uint256"},
-            {"name": "Esize", "type": "uint256", "internalType": "uint256"},
-            {"name": "Msize", "type": "uint256", "internalType": "uint256"},
-            {"name": "B", "type": "bytes", "internalType": "bytes"},
-            {"name": "E", "type": "bytes", "internalType": "bytes"},
-            {"name": "M", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000005",
-        "outputs": [
-            {"name": "value", "type": "bytes", "interalType": "bytes"},
-        ],
         "stateMutability": "pure",
     },
     # ecadd
-    {
+    "0x0000000000000000000000000000000000000006": {
+        "inputs": [
+            {"internalType": "bytes32", "name": "x1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "x2", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y2", "type": "bytes32"},
+        ],
+        "name": "ecadd",
+        "outputs": [
+            {"interalType": "bytes32", "name": "x", "type": "bytes32"},
+            {"interalType": "bytes32", "name": "y", "type": "bytes32"},
+        ],
         "selector": "0x3e69f620",
         "signature": "ecadd(bytes32,bytes32,bytes32,bytes32)",
-        "name": "ecadd",
-        "inputs": [
-            {"name": "x1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "x2", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y2", "type": "bytes32", "internalType": "bytes32"},
-        ],
-        "address": "0x0000000000000000000000000000000000000006",
-        "outputs": [
-            {"name": "x", "type": "bytes32", "interalType": "bytes32"},
-            {"name": "y", "type": "bytes32", "interalType": "bytes32"},
-        ],
         "stateMutability": "pure",
     },
     # ecmul
-    {
+    "0x0000000000000000000000000000000000000007": {
+        "inputs": [
+            {"internalType": "bytes32", "name": "x1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "s", "type": "bytes32"},
+        ],
+        "name": "ecmul",
+        "outputs": [
+            {"interalType": "bytes32", "name": "x", "type": "bytes32"},
+            {"interalType": "bytes32", "name": "y", "type": "bytes32"},
+        ],
         "selector": "0x6596c926",
         "signature": "ecmul(bytes32,bytes32,bytes32)",
-        "name": "ecmul",
-        "inputs": [
-            {"name": "x1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "s", "type": "bytes32", "internalType": "bytes32"},
-        ],
-        "address": "0x0000000000000000000000000000000000000007",
-        "outputs": [
-            {"name": "x", "type": "bytes32", "interalType": "bytes32"},
-            {"name": "y", "type": "bytes32", "interalType": "bytes32"},
-        ],
         "stateMutability": "pure",
     },
     # ecpairing
-    {
+    "0x0000000000000000000000000000000000000008": {
+        "inputs": [
+            {"internalType": "bytes32", "name": "x1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y1", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "x2", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y2", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "x3", "type": "bytes32"},
+            {"internalType": "bytes32", "name": "y3", "type": "bytes32"},
+        ],
+        "name": "ecpairing",
+        "outputs": [{"interalType": "bytes32", "name": "success", "type": "bytes32"}],
         "selector": "0xc9744441",
         "signature": "ecpairing(bytes32,bytes32,bytes32,bytes32,bytes32,bytes32)",
-        "name": "ecpairing",
-        "inputs": [
-            {"name": "x1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y1", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "x2", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y2", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "x3", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "y3", "type": "bytes32", "internalType": "bytes32"},
-        ],
-        "address": "0x0000000000000000000000000000000000000008",
-        "outputs": [
-            {"name": "success", "type": "bytes32", "interalType": "bytes32"},
-        ],
         "stateMutability": "pure",
     },
     # blake2f
     # NOTE: These types are not technically correct, but precompiled functions do not actually have a proper abi
-    {
+    "0x0000000000000000000000000000000000000009": {
+        "inputs": [
+            {"internalType": "uint32", "name": "rounds", "type": "uint32"},
+            {"internalType": "bytes64", "name": "h", "type": "bytes64"},
+            {"internalType": "bytes128", "name": "m", "type": "bytes128"},
+            {"internalType": "bytes16", "name": "t", "type": "bytes16"},
+            {"internalType": "bytes1", "name": "f", "type": "bytes1"},
+        ],
+        "name": "blake2f",
+        "outputs": [{"internalType": "bytes64", "name": "h", "type": "bytes64"}],
         "selector": "0x5cd8a5b3",
         "signature": "blake2f(uint32,bytes64,bytes128,bytes16,bytes1)",
-        "name": "blake2f",
-        "inputs": [
-            {"name": "rounds", "type": "uint32", "internalType": "uint32"},
-            {"name": "h", "type": "bytes64", "internalType": "bytes64"},
-            {"name": "m", "type": "bytes128", "internalType": "bytes128"},
-            {"name": "t", "type": "bytes16", "internalType": "bytes16"},
-            {"name": "f", "type": "bytes1", "internalType": "bytes1"},
-        ],
-        "address": "0x0000000000000000000000000000000000000009",
-        "outputs": [
-            {"name": "h", "type": "bytes64", "internalType": "bytes64"},
-        ],
         "stateMutability": "pure",
     },
     # validateTendermintHeader (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/TendermintLightClient.sol
-    {
-        "selector": "0x26507b88",
-        "signature": "validateTendermintHeader(uint256,uint256,uint64,bytes32,bytes32,bytes,bytes)",
-        "name": "validateTendermintHeader",
+    "0x0000000000000000000000000000000000000100": {
         "inputs": [
-            {"name": "length", "type": "uint256", "internalType": "uint256"},
-            {"name": "chainID", "type": "uint256", "internalType": "uint256"},
-            {"name": "height", "type": "uint64", "internalType": "uint64"},
-            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
+            {"internalType": "uint256", "name": "length", "type": "uint256"},
+            {"internalType": "uint256", "name": "chainID", "type": "uint256"},
+            {"internalType": "uint64", "name": "height", "type": "uint64"},
+            {"internalType": "bytes32", "name": "appHash", "type": "bytes32"},
             {
+                "internalType": "bytes32",
                 "name": "curValidatorSetHash",
                 "type": "bytes32",
-                "internalType": "bytes32",
             },
-            {"name": "nextValidatorSet", "type": "bytes", "internalType": "bytes"},
-            {"name": "header", "type": "bytes", "internalType": "bytes"},
+            {"internalType": "bytes", "name": "nextValidatorSet", "type": "bytes"},
+            {"internalType": "bytes", "name": "header", "type": "bytes"},
         ],
-        "address": "0x0000000000000000000000000000000000000100",
+        "name": "validateTendermintHeader",
         "outputs": [
-            {"name": "result", "type": "bytes32[128]", "internalType": "bytes32[128]"},
+            {"internalType": "bytes32[128]", "name": "result", "type": "bytes32[128]"}
         ],
+        "selector": "0x26507b88",
+        "signature": "validateTendermintHeader(uint256,uint256,uint64,bytes32,bytes32,bytes,bytes)",
         "stateMutability": "pure",
     },
     # verifyMerkleProof (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/MerkleProof.sol
-    {
+    "0x0000000000000000000000000000000000000101": {
+        "inputs": [
+            {"internalType": "string", "name": "storeName", "type": "string"},
+            {"internalType": "uint256", "name": "keyLength", "type": "uint256"},
+            {"internalType": "bytes", "name": "key", "type": "bytes"},
+            {"internalType": "uint256", "name": "valueLength", "type": "uint256"},
+            {"internalType": "bytes", "name": "value", "type": "bytes"},
+            {"internalType": "bytes32", "name": "appHash", "type": "bytes32"},
+            {"internalType": "bytes", "name": "proof", "type": "bytes"},
+        ],
+        "name": "verifyMerkleProof",
+        "outputs": [{"internalType": "uint256", "name": "result", "type": "uint256"}],
         "selector": "0x493e017d",
         "signature": "verifyMerkleProof(string,uint256,bytes,uint256,bytes,bytes32,bytes)",
-        "name": "verifyMerkleProof",
-        "inputs": [
-            {"name": "storeName", "type": "string", "internalType": "string"},
-            {"name": "keyLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "key", "type": "bytes", "internalType": "bytes"},
-            {"name": "valueLength", "type": "uint256", "internalType": "uint256"},
-            {"name": "value", "type": "bytes", "internalType": "bytes"},
-            {"name": "appHash", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "proof", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000101",
-        "outputs": [
-            {"name": "result", "type": "uint256", "internalType": "uint256"},
-        ],
         "stateMutability": "pure",
     },
     # verifyBLSSignature (BNB Chain)
     # ABI reverse engineered from https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/SlashIndicator.sol
-    {
+    "0x0000000000000000000000000000000000000102": {
+        "inputs": [
+            {"internalType": "bytes32", "name": "vote", "type": "bytes32"},
+            {"internalType": "bytes", "name": "voteSignature", "type": "bytes"},
+            {"internalType": "bytes", "name": "voteAddress", "type": "bytes"},
+        ],
+        "name": "verifyBLSSignature",
+        "outputs": [{"internalType": "uint256", "name": "output", "type": "bytes1"}],
         "selector": "0xb470122c",
         "signature": "verifyBLSSignature(bytes32,bytes,bytes)",
-        "name": "verifyBLSSignature",
-        "inputs": [
-            {"name": "vote", "type": "bytes32", "internalType": "bytes32"},
-            {"name": "voteSignature", "type": "bytes", "internalType": "bytes"},
-            {"name": "voteAddress", "type": "bytes", "internalType": "bytes"},
-        ],
-        "address": "0x0000000000000000000000000000000000000102",
-        "outputs": [
-            {"name": "output", "type": "bytes1", "internalType": "uint256"},
-        ],
         "stateMutability": "pure",
     },
     # BFTLightBlockValidate (BNB Chain)
     # Defined in https://github.com/bnb-chain/BEPs/blob/master/BEP221.md
-    {
-        "selector": "0xa391fe87",
-        "signature": "BFTLightBlockValidate(uint256,bytes,bytes)",
-        "name": "BFTLightBlockValidate",
+    "0x0000000000000000000000000000000000000103": {
         "inputs": [
             {
+                "internalType": "uint256",
                 "name": "consensusStateLength",
                 "type": "uint256",
-                "internalType": "uint256",
             },
-            {"name": "consensusState", "type": "bytes", "internalType": "bytes"},
-            {"name": "lightBlock", "type": "bytes", "internalType": "bytes"},
+            {"internalType": "bytes", "name": "consensusState", "type": "bytes"},
+            {"internalType": "bytes", "name": "lightBlock", "type": "bytes"},
         ],
-        "address": "0x0000000000000000000000000000000000000103",
+        "name": "BFTLightBlockValidate",
         "outputs": [
-            {"name": "result", "type": "bytes", "internalType": "bytes"},
+            {"internalType": "bytes", "name": "result", "type": "bytes"}
             # Output is encoded in the following format
             # Value: | validatorSetChanged | empty    | consensusStateLength | newConsensusState          |
             # Size : | 1 byte              | 23 bytes | 8 bytes              | consensusStateLength bytes |
         ],
+        "selector": "0xa391fe87",
+        "signature": "BFTLightBlockValidate(uint256,bytes,bytes)",
         "stateMutability": "pure",
     },
-]
+}
+
 
 # Map each address to its abi
 PRECOMPILED_MAP = {
-    (hex_to_bytes(abi["address"]), hex_to_bytes(abi["selector"])): abi
-    for abi in PRECOMPILES
+    hex_to_bytes(address): [
+        method | {"selector": hex_to_bytes(method["selector"])} for method in abi
+    ]
+    if isinstance(abi, list)
+    else abi | {"selector": hex_to_bytes(abi["selector"])}
+    for address, abi in PRECOMPILES.items()
 }

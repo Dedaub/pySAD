@@ -30,5 +30,5 @@ class UnknownPrecompile(PySADError):
         if isinstance(address, (bytes, bytearray, memoryview)):
             address = "0x" + address.hex()
         if isinstance(selector, (bytes, bytearray, memoryview)):
-            address = "0x" + selector.hex()
+            selector = "0x" + selector.hex()
         super().__init__(address, selector)
