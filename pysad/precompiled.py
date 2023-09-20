@@ -8,6 +8,7 @@ A list of these functions is available here: https://www.evm.codes/precompiled
 
 
 from itertools import starmap
+from pprint import pprint
 from typing import Any
 
 from eth_abi.abi import decode
@@ -24,16 +25,18 @@ from pysad.utils import (
 )
 
 
-def get_precompiled_abi(address: bytes | str, selector: bytes | str) -> dict | None:
+def get_precompiled_abi(
+    address: bytes | str, selector: bytes | str
+) -> tuple[bool, dict] | None:
     address_abi = PRECOMPILED_MAP.get(hex_to_bytes(address))
 
     if isinstance(address_abi, list):
         for method in address_abi:
             if method["selector"] == hex_to_bytes(selector):
-                return method
+                return True, method
 
     if isinstance(address_abi, dict):
-        return address_abi
+        return False, address_abi
 
     return None
 
@@ -52,8 +55,10 @@ def decode_precompiled_event(
     topics = topics[1:]
 
     # Check if this is actually a precompiled event
-    if (abi := get_precompiled_abi(address, selector)) is None:
+    if (use_abi := get_precompiled_abi(address, selector)) is None:
         raise UnknownPrecompile(address, selector)
+
+    _, abi = use_abi
 
     types, _ = get_input_info(abi["inputs"])
     rtypes_bmap, index_bmap = get_log_inputs(abi["inputs"])
@@ -87,8 +92,10 @@ def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[st
     selector = calldata[:4]
 
     # Check if this is actually a precompiled function
-    if (abi := get_precompiled_abi(address, selector)) is None:
+    if (use_abi := get_precompiled_abi(address, selector)) is None:
         raise UnknownPrecompile(address, selector)
+
+    has_selector, abi = use_abi
 
     # Check if a special case is needed to handle this function
     if case_handler := SPECIAL_CASES.get(abi["name"]):
@@ -98,7 +105,7 @@ def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[st
     types, _ = get_input_info(abi["inputs"])
 
     try:
-        args = decode(types, calldata)
+        args = decode(types, calldata[4:] if has_selector else calldata)
     except Exception as e:
         raise DecodingError from e
 
