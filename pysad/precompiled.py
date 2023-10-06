@@ -25,20 +25,25 @@ from pysad.utils import (
 )
 
 
+def is_precompile(address: bytes | str) -> bool:
+    return hex_to_bytes(address) in PRECOMPILED_MAP
+
+
 def get_precompiled_abi(
-    address: bytes | str, selector: bytes | str
-) -> tuple[bool, dict] | None:
+    address: bytes | str, selector: bytes | str | None
+) -> dict | None:
     address_abi = PRECOMPILED_MAP.get(hex_to_bytes(address))
 
     if isinstance(address_abi, list):
+        if selector is None:
+            raise RuntimeError("Selector required for precompiled contract")
         for method in address_abi:
-            if method["selector"] == hex_to_bytes(selector):
-                return True, method
+            if hex_to_bytes(method["selector"]) == hex_to_bytes(selector):
+                return method
+        else:
+            raise RuntimeError("Selector not found for precompiled contract")
 
-    if isinstance(address_abi, dict):
-        return False, address_abi
-
-    return None
+    return address_abi
 
 
 def decode_precompiled_event(
@@ -92,10 +97,8 @@ def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[st
     selector = calldata[:4]
 
     # Check if this is actually a precompiled function
-    if (use_abi := get_precompiled_abi(address, selector)) is None:
+    if (abi := get_precompiled_abi(address, selector)) is None:
         raise UnknownPrecompile(address, selector)
-
-    has_selector, abi = use_abi
 
     # Check if a special case is needed to handle this function
     if case_handler := SPECIAL_CASES.get(abi["name"]):
@@ -105,7 +108,10 @@ def decode_precompiled(address: bytes | str, input_data: bytes | str) -> dict[st
     types, _ = get_input_info(abi["inputs"])
 
     try:
-        args = decode(types, calldata[4:] if has_selector else calldata)
+        args = decode(
+            types,
+            calldata[4:] if hex_to_bytes(abi["selector"]) == calldata[:4] else calldata,
+        )
     except Exception as e:
         raise DecodingError from e
 
@@ -302,7 +308,7 @@ SPECIAL_CASES = {
 
 # Define precompiled function abis
 # NOTE: The selectors included have been manually added for conformity. Precompiled functions do not actually have selectors.
-PRECOMPILES = ARB_PRECOMPILES | {
+PRECOMPILES: dict[str, dict | list[dict]] = ARB_PRECOMPILES | {
     # ecrecover
     "0x0000000000000000000000000000000000000001": {
         "inputs": [
@@ -510,11 +516,6 @@ PRECOMPILES = ARB_PRECOMPILES | {
 
 
 # Map each address to its abi
-PRECOMPILED_MAP = {
-    hex_to_bytes(address): [
-        method | {"selector": hex_to_bytes(method["selector"])} for method in abi
-    ]
-    if isinstance(abi, list)
-    else abi | {"selector": hex_to_bytes(abi["selector"])}
-    for address, abi in PRECOMPILES.items()
+PRECOMPILED_MAP: dict[bytes, dict | list[dict]] = {
+    hex_to_bytes(addr): abi for addr, abi in PRECOMPILES.items()
 }

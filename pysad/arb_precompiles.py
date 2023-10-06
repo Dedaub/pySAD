@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-ARB_PRECOMPILES = {
+ARB_PRECOMPILES: dict[str, dict | list[dict]] = {
     "0x0000000000000000000000000000000000000064": [
         {
             "inputs": [
