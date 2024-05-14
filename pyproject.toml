@@ -10,7 +10,7 @@ readme = "README.md"
 python = "^3.10"
 pyevmasm = "^0.2.3"
 eth-abi = "^4.0.0"
-eth-utils = "^2.1.0"
+eth-utils = "^4.1.1"
 eth-hash = { extras = ["pycryptodome"], version = "^0.5.1" }
 
 
