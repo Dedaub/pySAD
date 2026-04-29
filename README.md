@@ -2,6 +2,20 @@
 
 `pysad` is modern lightweight library for decoding `EVM` transactions and logs.
 
+## Development
+
+Install `uv`, create the project environment, and install the dev dependencies:
+
+```bash
+uv sync --dev
+```
+
+Run tests with:
+
+```bash
+uv run pytest
+```
+
 ## ABI Decoding
 
 ```python
